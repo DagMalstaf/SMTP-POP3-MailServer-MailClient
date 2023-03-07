@@ -6,3 +6,8 @@ SMTP is used to send mails from a mail client to the mail server, while POP3 is 
 
 A TCP connection is established between two SMTP servers to transmit and receive emails.
 As with SMTP, POP3 uses text commands over a TCP connection.
+
+
+Project by:
+Tristan Toye
+Dag Malstaf
