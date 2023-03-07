@@ -9,5 +9,5 @@ As with SMTP, POP3 uses text commands over a TCP connection.
 
 
 Project by:
-Tristan Toye
+Tristan Toye &
 Dag Malstaf
