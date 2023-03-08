@@ -52,7 +52,7 @@ def loop_server(port: int) -> None:
                     pass
 
 def write_to_mailbox(username: str, message:str):
-    #locks & signal (queue)
+    #TODO: locks & signal (queue) DAG
     pass
 
 def read_from_mailbox(username:str, message:str):

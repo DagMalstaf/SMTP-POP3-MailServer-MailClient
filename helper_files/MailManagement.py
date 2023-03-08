@@ -1,16 +1,14 @@
-from abc import ABC, abstractmethod
-
 from structlog import BoundLogger
 
+from helper_files.Action import Action
 from helper_files.ConfigWrapper import ConfigWrapper
 
 
-class Action(ABC):
+class MailManagement(Action):
 
     def __init__(self, logger: BoundLogger, config: ConfigWrapper):
-        self._logger = logger
-        self._config = config
+        super().__init__(logger, config)
+        pass
 
-    @abstractmethod
     def action(self):
         pass

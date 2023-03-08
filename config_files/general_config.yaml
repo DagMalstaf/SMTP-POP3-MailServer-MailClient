@@ -1,0 +1,10 @@
+actions_for_mail_cient:
+    - "Mail Sending"
+    - "Mail Management"
+    - "Exit"
+message_format: "
+    From: <username>@<domain name>\n
+    To: <username>@<domain name>\n
+    Subject: <subject string, max 150 characters>\n
+    <Message body – one or more lines, terminated by a final line with only a full stop character '.'>\n
+"
