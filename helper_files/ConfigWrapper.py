@@ -14,4 +14,20 @@ class WrapperConfig:
             except yaml.YAMLError as e:
                 raise ConfigReadError(f"Unable to load config file, error:\n"
                                       f"{e}")
+    
+
+    def getFromConfig(self) -> str:
+        return self._loaded_config_dictionary.get("FROM")
+    
+    def getToConfig(self) -> str:
+        return self._loaded_config_dictionary.get("TO")
+    
+    def getSubjectConfig(self) -> str:
+        return self._loaded_config_dictionary.get("SUBJECT")
+    
+    def getRecievedConfig(self) -> str:
+        return self._loaded_config_dictionary.get("RECIEVED")
+    
+    def getDateLen(self) -> int:
+        return len(self._loaded_config_dictionary.get("DATE"))
 
