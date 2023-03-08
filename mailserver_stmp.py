@@ -13,8 +13,23 @@ def retrieve_port() -> int:
     except:
         pass
 
-
 def service_mail_request(data: str):
+    #pop3 function implementation
+    pass
+
+def POP3_HELO():
+    pass
+
+def POP3_MAIL_FROM():
+    pass
+
+def POP3_RCPT_TO():
+    pass
+
+def POP3_DATA():
+    pass
+
+def POP3_QUIT():
     pass
 
 def concurrent_mail_service(data: str):
@@ -40,7 +55,7 @@ def write_to_mailbox(username: str, message:str):
     #locks & signal (queue)
     pass
 
-def read_from_mailbox(username:str, message:str)
+def read_from_mailbox(username:str, message:str):
     #no locks
     pass
 
