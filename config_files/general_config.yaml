@@ -8,3 +8,8 @@ message_format: "
     Subject: <subject string, max 150 characters>\n
     <Message body – one or more lines, terminated by a final line with only a full stop character '.'>\n
 "
+FROM : "From:"
+TO : "To:"
+SUBJECT : "Subject:"
+RECIEVED : "Received:"
+DATE : 15

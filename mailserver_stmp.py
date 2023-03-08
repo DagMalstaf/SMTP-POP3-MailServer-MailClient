@@ -13,6 +13,26 @@ def retrieve_port() -> int:
     except:
         pass
 
+
+# consumer
+def service_mail_request(data: str):
+    username = data
+    with open('/{username}/my_mailbox.txt', 'w') as file:
+    file.write()
+
+    # Close the file
+    file.close()
+
+    pass
+
+#producer
+def concurrent_mail_service(data: str):
+    producer_thread = threading.Thread(target=service_mail_request, args=(data,))
+    producer_thread.start()
+    print(f"Producer thread started")
+
+    pass
+
 def service_mail_request(data: str):
     #pop3 function implementation
     pass
