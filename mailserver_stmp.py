@@ -3,6 +3,7 @@ import threading
 from concurrent.futures import Future, ThreadPoolExecutor
 import uuid
 import typing
+from helper_files.MessageWrapper import MessageWrapper
 
 from structlog import get_logger, BoundLogger
 
@@ -20,8 +21,11 @@ def retrieve_port() -> int:
 
 
 # consumer
-def service_mail_request(data: str):
-    username = data
+def service_mail_request(data: str, config: ConfigWrapper) -> None:
+    data = MessageWrapper()
+    usernameTo = data.getToUsername()
+    usernameFrom = data.GetFromUsername()
+
     with open('/{username}/my_mailbox.txt', 'w') as file:
         file.write()
         
@@ -34,7 +38,7 @@ def service_mail_request(data: str):
 
 
 # create a thread pool with 100 threads
-executor = ThreadPoolExecutor(max_workers=10)
+executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
 
 # define a dictionary to store the task information
 tasks = {}
