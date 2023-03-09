@@ -21,6 +21,7 @@ def service_mail_request(data: str):
     username = data
     with open('/{username}/my_mailbox.txt', 'w') as file:
         file.write()
+        
 
         # Close the file
         file.close()
