@@ -1,8 +1,10 @@
 import socket
+import threading
 
+from structlog import get_logger, BoundLogger
 
-HOST = "127.0.0.1"
-MAX_SIZE_TCP_PACKET = 65535
+from helper_files.ConfigWrapper import ConfigWrapper
+
 
 def retrieve_port() -> int:
     # Port to listen on (non-privileged ports are > 1023)
@@ -18,10 +20,10 @@ def retrieve_port() -> int:
 def service_mail_request(data: str):
     username = data
     with open('/{username}/my_mailbox.txt', 'w') as file:
-    file.write()
+        file.write()
 
-    # Close the file
-    file.close()
+        # Close the file
+        file.close()
 
     pass
 
@@ -31,10 +33,6 @@ def concurrent_mail_service(data: str):
     producer_thread.start()
     print(f"Producer thread started")
 
-    pass
-
-def service_mail_request(data: str):
-    #pop3 function implementation
     pass
 
 def POP3_HELO():
@@ -52,20 +50,17 @@ def POP3_DATA():
 def POP3_QUIT():
     pass
 
-def concurrent_mail_service(data: str):
-    # maybe lock for max events
-    pass
 
-def loop_server(port: int) -> None:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((HOST, port))
-        s.listen()
-        conn, addr = s.accept()
+def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
+        smtp_socket.bind((config.get_host(), port))
+        smtp_socket.listen()
+        conn, addr = smtp_socket.accept()
         with conn:
-            print(f"Connected by {addr}")
+            logger.info(f"Connected by {addr}")
             while True:
                 try:
-                    data = conn.recv(MAX_SIZE_TCP_PACKET)
+                    data = conn.recv(config.get_max_size_package_tcp())
                     message = str(data)
                     concurrent_mail_service(message)
                 except: # let crash for specific exception code
@@ -81,7 +76,9 @@ def read_from_mailbox(username:str, message:str):
 
 def main() -> None:
     listening_port = retrieve_port()
-    loop_server(listening_port)
+    logger = get_logger()
+    config = ConfigWrapper(logger,"general_config")
+    loop_server(logger, config, listening_port)
 
 
 if __name__ == "__main__":
