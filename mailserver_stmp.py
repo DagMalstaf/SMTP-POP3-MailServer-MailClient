@@ -62,10 +62,31 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
             while True:
                 try:
                     data = conn.recv(config.get_max_size_package_tcp())
+                    if not data:
+                        # no data received, client has closed the connection
+                        logger.info("No data received, closing connection")
+                        break
                     message = str(data)
                     concurrent_mail_service(message)
-                except: # let crash for specific exception code
-                    pass
+                except ConnectionResetError:
+                    # client has closed the connection unexpectedly
+                    logger.exception("Client closed the connection unexpectedly")
+                    break
+                except socket.timeout:
+                    # no data received within timeout period
+                    logger.exception("No data received from client within timeout period")
+                
+                except KeyboardInterrupt:
+                    # user has interrupted the program execution
+                    logger.info("Program interrupted by user")
+                    break
+                except ValueError:
+                    # data received cannot be converted to string
+                    logger.exception("Received data cannot be converted to string")
+                except Exception as e:
+                    # any other exception
+                    logger.exception(f"An error occurred: {e}")
+                    break
 
 def write_to_mailbox(username: str, message:str):
     #TODO: locks & signal (queue) DAG
