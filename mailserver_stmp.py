@@ -54,7 +54,7 @@ def concurrent_mail_service(data: str) -> None:
     }
     
     # submit the task to the thread pool
-    future = executor.submit(service_mail_request, data)
+    future = executor.submit(service_mail_request, data, config)
     print(f"Task {task_id} submitted to thread pool: {future}")
     
     # update the task status to running
@@ -112,7 +112,7 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
                         logger.info("No data received, closing connection")
                         break
                     message = str(data)
-                    concurrent_mail_service(message)
+                    concurrent_mail_service(message, config)
 
                 except ConnectionResetError:
                     # client has closed the connection unexpectedly
