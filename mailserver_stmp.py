@@ -1,5 +1,8 @@
 import socket
 import threading
+from concurrent.futures import Future, ThreadPoolExecutor
+import uuid
+import typing
 
 from structlog import get_logger, BoundLogger
 
@@ -28,13 +31,51 @@ def service_mail_request(data: str):
 
     pass
 
-#producer
-def concurrent_mail_service(data: str):
-    producer_thread = threading.Thread(target=service_mail_request, args=(data,))
-    producer_thread.start()
-    print(f"Producer thread started")
 
-    pass
+
+# create a thread pool with 100 threads
+executor = ThreadPoolExecutor(max_workers=10)
+
+# define a dictionary to store the task information
+tasks = {}
+
+def concurrent_mail_service(data: str) -> None:
+    # generate a unique task ID
+    task_id = uuid.uuid4().hex
+    
+    # store the task information in the dictionary
+    tasks[task_id] = {
+        "status": "queued",
+        "data": data
+    }
+    
+    # submit the task to the thread pool
+    future = executor.submit(service_mail_request, data)
+    print(f"Task {task_id} submitted to thread pool: {future}")
+    
+    # update the task status to running
+    tasks[task_id]["status"] = "running"
+    
+    # create a lambda function that calls the handle_result function
+    # with the task_id and Future object as arguments
+    callback = lambda f: handle_result(task_id, f)
+
+    # register the callback function with the Future object
+    future.add_done_callback(callback)
+
+
+def handle_result(task_id: str, future: Future) -> typing.Any:
+    try:
+        result = future.result()
+        print(f"Task completed with result: {result}")
+        # handle the result here
+
+
+    except Exception as e:
+        print(f"Task failed with exception: {e}")
+        # update the task status to failed
+        tasks[task_id]["status"] = "failed"
+
 
 def POP3_HELO():
     pass
@@ -68,6 +109,7 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
                         break
                     message = str(data)
                     concurrent_mail_service(message)
+
                 except ConnectionResetError:
                     # client has closed the connection unexpectedly
                     logger.exception("Client closed the connection unexpectedly")
@@ -75,7 +117,6 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
                 except socket.timeout:
                     # no data received within timeout period
                     logger.exception("No data received from client within timeout period")
-                
                 except KeyboardInterrupt:
                     # user has interrupted the program execution
                     logger.info("Program interrupted by user")
