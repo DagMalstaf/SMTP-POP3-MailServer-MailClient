@@ -1,14 +1,11 @@
+from structlog import BoundLogger
 from multiprocessing import get_logger
 from typing import Union, Dict
 
 from helper_files.Action import Action
 from helper_files.ConfigWrapper import ConfigWrapper
 
-CLIENT_ACTIONS: Dict[str,Action] ={
-    "Mail Sending": Action() ,
-    "Mail Management": Action(),
-    "Exit":Action()
-}
+
 
 
 def retrieve_command_promt_input(message_to_display:str, cast_to_int: bool = False, hash_input: bool = False) -> Union[str,int]:
@@ -33,20 +30,18 @@ def get_parameters_mail_client() -> tuple[str | int, str | int, str | int, str |
     return server_ip, SMTP_server_port, POP3_server_port, username, password
 
 
-def get_action_class(key:str):
-    try:
-        return CLIENT_ACTIONS.get(key)
-    except KeyError as e:
-        pass
-
-
-def main():
+def main(logger: BoundLogger, config: ConfigWrapper ):
     ip_address,SMTP_port, POP3_port, username, password = get_parameters_mail_client()
     while True:
-        action = retrieve_command_promt_input(f"Please select action [{', '.join(CLIENT_ACTIONS.keys())}]: ")
-        wrapper_class_mail_action = get_action_class(action)
+        try:
+            action = retrieve_command_promt_input(f"Please select action [{config.get_mail_client_actions_as_string()}]: ")
+            wrapper_class_mail_action = config.get_mail_client_action_as_class(action)(logger, config,ip_address,SMTP_port, POP3_port, username, password)
+            logger.info(f"succesfully starting {wrapper_class_mail_action} action")
+            wrapper_class_mail_action.action()
+        except:
+            pass
 
 if __name__ == "__main__":
     logger = get_logger()
-    config = ConfigWrapper("general_config")
-    main()
+    config = ConfigWrapper(logger,"general_config")
+    main(logger,config)

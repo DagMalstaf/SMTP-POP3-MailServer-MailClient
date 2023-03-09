@@ -1,0 +1,24 @@
+actions_for_mail_cient :
+    - "Mail Sending"
+    - "Mail Management"
+    - "Exit"
+actions_for_mail_management :
+    - "Count"
+    - "List"
+    - "Retrieve"
+    - "Delete"
+    - "Quit"
+message_format : "
+    From: <username>@<domain name>\n
+    To: <username>@<domain name>\n
+    Subject: <subject string, max 150 characters>\n
+    <Message body – one or more lines, terminated by a final line with only a full stop character '.'>\n
+"
+from: "From:"
+to : "To:"
+subject : "Subject:"
+received : "Received:"
+date_length : 15
+stopping_character : "."
+host : "127.0.0.1"
+max_size_package_tcp : 65535
