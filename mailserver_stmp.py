@@ -14,14 +14,19 @@ file_semaphore = threading.Semaphore(1)
 tasks = {}
 
 
+
 def retrieve_port() -> int:
-    # Port to listen on (non-privileged ports are > 1023)
-    # implement soft alert -> continue code working if possible
     try:
-        my_port = int(input())
-        return my_port
-    except:
-        pass
+        my_port = int(input("Enter a port number (non-privileged ports are > 1023): "))
+        if my_port > 1023:
+            return my_port
+        
+        else:
+            print("Port number must be greater than 1023.")
+            return retrieve_port()
+    except ValueError:
+        print("Invalid input. Please enter a valid integer.")
+        return retrieve_port()
 
 
 # consumer
