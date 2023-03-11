@@ -1,13 +1,17 @@
 import socket
 import threading
-from concurrent.futures import Future, ThreadPoolExecutor
 import uuid
 import typing
 from helper_files.MessageWrapper import MessageWrapper
-
+from concurrent.futures import Future, ThreadPoolExecutor
 from structlog import get_logger, BoundLogger
-
 from helper_files.ConfigWrapper import ConfigWrapper
+
+# define a semaphore to limit the number of concurrent connections
+file_semaphore = threading.Semaphore(1)
+
+# define a dictionary to store the mail process information
+tasks = {}
 
 
 def retrieve_port() -> int:
@@ -24,26 +28,10 @@ def retrieve_port() -> int:
 def service_mail_request(data: str, config: ConfigWrapper) -> None:
     data = MessageWrapper()
     usernameTo = data.getToUsername()
-    usernameFrom = data.GetFromUsername()
+    write_to_mailbox(usernameTo, data.getMessageBody())
+    
 
-    with open('/{username}/my_mailbox.txt', 'w') as file:
-        file.write()
-        
-
-        # Close the file
-        file.close()
-
-    pass
-
-
-
-# create a thread pool with 100 threads
-executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
-
-# define a dictionary to store the task information
-tasks = {}
-
-def concurrent_mail_service(data: str) -> None:
+def concurrent_mail_service(data: str, config: ConfigWrapper, executor: ThreadPoolExecutor) -> None:
     # generate a unique task ID
     task_id = uuid.uuid4().hex
     
@@ -97,7 +85,7 @@ def POP3_QUIT():
     pass
 
 
-def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
+def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor: ThreadPoolExecutor) -> None:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
         smtp_socket.bind((config.get_host(), port))
         smtp_socket.listen()
@@ -112,7 +100,7 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
                         logger.info("No data received, closing connection")
                         break
                     message = str(data)
-                    concurrent_mail_service(message, config)
+                    concurrent_mail_service(message, config, executor)
 
                 except ConnectionResetError:
                     # client has closed the connection unexpectedly
@@ -133,9 +121,16 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
                     logger.exception(f"An error occurred: {e}")
                     break
 
-def write_to_mailbox(username: str, message:str):
-    #TODO: locks & signal (queue) DAG
-    pass
+def write_to_mailbox(username: str, message:str) -> None:
+    file_semaphore.acquire()
+
+    with open('/{username}/my_mailbox.txt', 'a') as file:
+        file.write(message + '\n')    
+        file.flush()
+
+    file_semaphore.release()
+    
+    
 
 def read_from_mailbox(username:str, message:str):
     #no locks
@@ -145,7 +140,9 @@ def main() -> None:
     listening_port = retrieve_port()
     logger = get_logger()
     config = ConfigWrapper(logger,"general_config")
-    loop_server(logger, config, listening_port)
+    # create a thread pool with 100 threads
+    executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
+    loop_server(logger, config, listening_port, executor)
 
 
 if __name__ == "__main__":
