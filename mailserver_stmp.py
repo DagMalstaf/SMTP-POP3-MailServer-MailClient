@@ -126,6 +126,7 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
                     logger.exception(f"An error occurred: {e}")
                     break
 
+
 def write_to_mailbox(username: str, message:str) -> None:
     file_semaphore.acquire()
 
@@ -135,11 +136,16 @@ def write_to_mailbox(username: str, message:str) -> None:
 
     file_semaphore.release()
     
-    
 
-def read_from_mailbox(username:str, message:str):
-    #no locks
-    pass
+def read_from_mailbox(username:str, message:str) -> str:
+    with open('file.txt', 'r') as file:
+        for line in file:
+            if username in line and message == line:
+                return str(line)
+            else:
+                continue
+
+
 
 def main() -> None:
     listening_port = retrieve_port()
