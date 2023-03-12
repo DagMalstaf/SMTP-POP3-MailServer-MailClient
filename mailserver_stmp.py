@@ -73,6 +73,12 @@ def handle_result(task_id: str, future: Future) -> typing.Any:
         # update the task status to failed
         tasks[task_id]["status"] = "failed"
 
+def get_task_dict() -> dict:
+    return tasks
+
+def get_task(task_id: str) -> str:
+    return tasks.get(task_id)
+
 
 def POP3_HELO():
     pass
