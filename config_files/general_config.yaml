@@ -22,3 +22,4 @@ date_length : 15
 stopping_character : "."
 host : "127.0.0.1"
 max_size_package_tcp : 65535
+max_thread_load : 100
