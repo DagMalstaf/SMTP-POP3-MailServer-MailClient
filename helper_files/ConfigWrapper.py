@@ -101,4 +101,7 @@ class ConfigWrapper:
 
     def get_max_size_package_tcp(self) -> int:
         return self._loaded_config_dictionary["max_size_package_tcp"]
+    
+    def get_max_thread_load(self) -> int:
+        return self._loaded_config_dictionary["max_thread_load"]
 

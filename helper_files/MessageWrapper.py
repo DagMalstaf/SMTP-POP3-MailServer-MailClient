@@ -1,6 +1,7 @@
 from structlog import BoundLogger
 
 import ConfigWrapper
+import regex
 
 class MessageWrapper():
     def __init__(self, logger: BoundLogger, config: ConfigWrapper ,message: str) -> str:
@@ -49,7 +50,9 @@ class MessageWrapper():
     
     def getMessageBody(self) -> str:
         return self._message
-
+    
     def verify_format(self) -> bool:
-        #TODO: verifying format of message, return True when format is correct
-        pass
+        pattern = r'^From: \S+@\S+\nTo: \S+@\S+\nSubject: .{1,150}\n(.+\n)*\.$'
+        return bool(regex.match(pattern, self.message))
+
+ 
