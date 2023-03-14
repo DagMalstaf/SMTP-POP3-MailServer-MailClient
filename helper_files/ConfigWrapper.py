@@ -5,13 +5,13 @@ import yaml
 from yaml.loader import SafeLoader
 
 from custom_exceptions.ConfigReadError import ConfigReadError
-from helper_files import Action
+from helper_files.Action import Action
 from helper_files.Exit import Exit
 from helper_files.MailManagement import MailManagement
 from helper_files.MailSending import MailSending
 from helper_files.pop3_functions import pop3_count, pop3_retrieve, pop3_list, pop3_delete, pop3_quit
 
-CLIENT_MAIL_ACTIONS: Dict[str,Action] ={
+CLIENT_MAIL_ACTIONS: Dict[str, Action] ={
     "Mail Sending": MailSending ,
     "Mail Management": MailManagement,
     "Exit": Exit
@@ -101,4 +101,7 @@ class ConfigWrapper:
 
     def get_max_size_package_tcp(self) -> int:
         return self._loaded_config_dictionary["max_size_package_tcp"]
+    
+    def get_max_thread_load(self) -> int:
+        return self._loaded_config_dictionary["max_thread_load"]
 
