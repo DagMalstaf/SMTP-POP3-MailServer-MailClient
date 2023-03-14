@@ -6,13 +6,13 @@ from structlog import BoundLogger
 from helper_files.Action import Action
 from helper_files.ConfigWrapper import ConfigWrapper
 from helper_files.MessageWrapper import MessageWrapper
-from helper_files.smtp3_functions import smtp_helo, smtp_mail_from, smtp
+from helper_files.smtp3_functions import smtp_helo, smtp_mail_from, smtp_rcpt_to, smtp_data, smtp_quit
 
 # SMTP
 class MailSending(Action):
 
     def __init__(self, logger: BoundLogger, config: ConfigWrapper,ip_address,SMTP_port, POP3_port, username, password):
-        super().__init__(logger, config, ip_address,SMTP_port, POP3_port, username, password)
+        super().__init__(logger, config, ip_address, SMTP_port, POP3_port, username, password)
         pass
 
 
@@ -20,10 +20,10 @@ class MailSending(Action):
     Function: action(self)
 
     Description:
-    This method is used to send a message using the SMTP and POP3 protocols. 
+    This method is used to send a message using the SMTP protocols. 
     It prompts the user to enter the message content, verifies the message format using the `MessageWrapper` class. 
-    Then sends the message using the `socket` module and the POP3 protocol. 
-    The SMTP and POP3 communication is performed using separate methods.
+    Then sends the message using the `socket` module and the SMTP protocol. 
+    The SMTP communication is performed using separate methods.
 
     Parameters:
     None
@@ -42,17 +42,17 @@ class MailSending(Action):
 
             message = MessageWrapper(self._logger,self._config, input_message)
             if message.verify_format():
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as pop3_socket:
-                    pop3_socket.bind((self._config.get_host(), self._POP3_port))
-                    pop3_socket.listen()
-                    conn, addr = pop3_socket.accept()
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
+                    smtp_socket.bind((self._config.get_host(), self._SMTP_port))
+                    smtp_socket.listen()
+                    conn, addr = smtp_socket.accept()
                     with conn:
                         self._logger.info(f"Connected by {addr}")
-                        pop3_helo(message.getToDomain_name())
-                        pop3_mail_from(message.getFrom())
-                        pop3_rcpt_to(message.getTo())
-                        pop3_data(message.getMessageBody())
-                        pop3_quit(receiver = message.getTo())
+                        smtp_helo(message.getToDomain_name())
+                        smtp_mail_from(message.getFrom())
+                        smtp_rcpt_to(message.getTo())
+                        smtp_data(message.getMessageBody())
+                        smtp_quit(receiver = message.getTo())
                         self._logger.info("Mail sent successfully")
                 correct_format = True
             else:
