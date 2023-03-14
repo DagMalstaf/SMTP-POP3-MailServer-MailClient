@@ -6,6 +6,8 @@ from helper_files.Action import Action
 from helper_files.ConfigWrapper import ConfigWrapper
 from helper_files.pop3_functions import pop3_authentication, pop3_list
 from mail_client import retrieve_command_promt_input, main
+from helper_files.pop3_functions import pop3_stat, pop3_list, pop3_retrieve, pop3_delete, pop3_count
+
 
 
 class MailManagement(Action):
