@@ -80,19 +80,21 @@ def get_task(task_id: str) -> str:
     return tasks.get(task_id)
 
 
-def POP3_HELO():
+def SMTP_HELO():
+    correcte_response = True
+    if correcte_response:
+        return "Service Ready"
+
+def SMTP_MAIL_FROM():
     pass
 
-def POP3_MAIL_FROM():
+def SMTP_RCPT_TO():
     pass
 
-def POP3_RCPT_TO():
+def SMTP_DATA():
     pass
 
-def POP3_DATA():
-    pass
-
-def POP3_QUIT():
+def SMTP_QUIT():
     pass
 
 

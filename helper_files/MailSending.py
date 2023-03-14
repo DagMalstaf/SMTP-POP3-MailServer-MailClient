@@ -48,11 +48,11 @@ class MailSending(Action):
                     conn, addr = smtp_socket.accept()
                     with conn:
                         self._logger.info(f"Connected by {addr}")
-                        smtp_helo(message.getToDomain_name())
-                        smtp_mail_from(message.getFrom())
-                        smtp_rcpt_to(message.getTo())
-                        smtp_data(message.getMessageBody())
-                        smtp_quit(receiver = message.getTo())
+                        helo_response = smtp_helo(config, message.getToDomain_name(), smtp_socket)
+                        mail_from_response = smtp_mail_from(message.getFrom())
+                        rcpt_to_response = smtp_rcpt_to(message.getTo())
+                        data_response = smtp_data(message.getMessageBody())
+                        quit_response = smtp_quit(receiver = message.getTo())
                         self._logger.info("Mail sent successfully")
                 correct_format = True
             else:
