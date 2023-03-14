@@ -36,8 +36,9 @@ class MailSending(Action):
         input_list: List[str] = list()
         while self._check_end_line(input_list[-1]):
             input_list.append(input())
+        input_message = '\n'.join(input_list)
 
-        message = MessageWrapper(self._logger,self._config, '\n'.join(input_list))
+        message = MessageWrapper(self._logger,self._config, input_message)
         if message.verify_format():
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as pop3_socket:
                 pop3_socket.bind((self._config.get_host(), self._POP3_port))
@@ -52,7 +53,6 @@ class MailSending(Action):
                     pop3_quit(receiver = message.getTo())
 
 
-#
     """
     Function: _check_end_line(self, last_line: str) -> bool
 
