@@ -67,9 +67,6 @@ def smtp_data(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, d
 
 
 
-    pass
-
-
 def smtp_quit(**kwargs):
     receiver = kwargs.get("receiver")
     # TODO: see image with typical sequence to implement functionality
