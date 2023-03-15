@@ -30,7 +30,6 @@ def retrieve_port() -> int:
         return retrieve_port()
 
 
-# consumer
 def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor, conn: socket) -> None:
     with conn:
             while True:
@@ -113,9 +112,9 @@ def get_task(task_id: str) -> str:
 
 def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket) -> None:
     if command == "HELO":
-        SMTP_HELO(logger, config, message, connection, executor)
+        SMTP_HELO(logger, config, command,  message, connection, executor)
     elif command == "MAIL_FROM":
-        SMTP_MAIL_FROM()
+        SMTP_MAIL_FROM(logger, config, command, message, connection)
     elif command == "RCPT_TO":
         SMTP_RCPT_TO()
     elif command == "DATA":
@@ -127,19 +126,28 @@ def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, me
 
 
 
-def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, server_domain_name: str, connection: socket, executor: ThreadPoolExecutor) -> None:
-    # must be asynchronous
-    
-    concurrent_mail_service(logger, config, server_domain_name, executor, connection)
-    send_message = tuple("250 OK", "Hello "+ server_domain_name + "\r\n")
+def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
+    logger.info(command + " " + message)
+    #TODO: must be asynchronous
+    concurrent_mail_service(logger, config, message, executor, connection)
+    send_message = tuple("250 OK", "Hello "+ message + "\r\n")
     pickle_data = pickle.dumps(send_message)
+    logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
 
-def SMTP_MAIL_FROM():
-    pass
+def SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+    logger.info(command + ": " + message)
+    send_message = tuple("250", " " + message + "... Sender ok" + "\r\n")
+    pickle_data = pickle.dumps(send_message)
+    logger.info(send_message[0] + send_message[1])
+    connection.sendall(pickle_data)
 
-def SMTP_RCPT_TO():
-    pass
+def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+    logger.info(command + ": " + message)
+    send_message = tuple("250", " " + " root... Recipient ok" + "\r\n")
+    pickle_data = pickle.dumps(send_message)
+    logger.info(send_message[0] + send_message[1])
+    connection.sendall(pickle_data)
 
 def SMTP_DATA():
     pass
@@ -164,6 +172,9 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
                     tuple_data = pickle.loads(data)
                     command = tuple_data[0]
                     data = tuple_data[1]
+                    # only for handling the HELO command
+                    # the other commands are handled by the service_mail_request function
+                    #TODO: make sure other commands are handled by the service_mail_request function
                     command_handler(logger, config, command, data,  executor, conn)
 
                 except ConnectionResetError:
