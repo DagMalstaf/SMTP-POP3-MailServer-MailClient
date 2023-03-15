@@ -102,7 +102,7 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
         smtp_socket.listen()
         conn, addr = smtp_socket.accept()
         with conn:
-            logger.info(f"Connected by {addr}")
+            logger.info(f"{addr} Service Ready")
             while True:
                 try:
                     data = conn.recv(config.get_max_size_package_tcp())
