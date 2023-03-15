@@ -2,6 +2,7 @@ import socket
 import threading
 import uuid
 import typing
+import pickle
 from helper_files.MessageWrapper import MessageWrapper
 from concurrent.futures import Future, ThreadPoolExecutor
 from structlog import get_logger, BoundLogger
@@ -79,20 +80,39 @@ def get_task_dict() -> dict:
 def get_task(task_id: str) -> str:
     return tasks.get(task_id)
 
+def command_handler(command: str, message: str, logger: BoundLogger, config: ConfigWrapper, executor: ThreadPoolExecutor, connection: socket) -> None:
+    if command == "HELO":
+        SMTP_HELO(message, connection)
+    elif command == "MAIL_FROM":
+        SMTP_MAIL_FROM()
+    elif command == "RCPT_TO":
+        SMTP_RCPT_TO()
+    elif command == "DATA":
+        SMTP_DATA()
+    elif command == "QUIT":
+        SMTP_QUIT()
+    else:
+        print(f"Invalid command: {command}")
 
-def POP3_HELO():
+
+
+def SMTP_HELO(message: str, connection: socket) -> None:
+    send_message = tuple("250 OK", "Hello "+ message + "\r\n")
+    pickle_data = pickle.dumps(send_message)
+    connection.sendall(pickle_data)
+
     pass
 
-def POP3_MAIL_FROM():
+def SMTP_MAIL_FROM():
     pass
 
-def POP3_RCPT_TO():
+def SMTP_RCPT_TO():
     pass
 
-def POP3_DATA():
+def SMTP_DATA():
     pass
 
-def POP3_QUIT():
+def SMTP_QUIT():
     pass
 
 
@@ -110,8 +130,12 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
                         # no data received, client has closed the connection
                         logger.info("No data received, closing connection")
                         break
+                    tuple_data = pickle.loads(data)
+                    command = tuple_data[0]
+                    data = tuple_data[1]
                     message = str(data)
-                    concurrent_mail_service(message, config, executor)
+                    command_handler(command, message, logger, config, executor, conn)
+                    #concurrent_mail_service(message, config, executor)
 
                 except ConnectionResetError:
                     # client has closed the connection unexpectedly

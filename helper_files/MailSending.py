@@ -48,7 +48,7 @@ class MailSending(Action):
                     conn, addr = smtp_socket.accept()
                     with conn:
                         self._logger.info(f"{addr} Service Ready")
-                        smtp_helo(conn, addr)
+                        smtp_helo(conn, self._config.get_host(), self._config)
                         smtp_mail_from(message.getFrom())
                         smtp_rcpt_to(message.getTo())
                         smtp_data(message.getMessageBody())
