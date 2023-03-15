@@ -96,12 +96,11 @@ def command_handler(command: str, message: str, logger: BoundLogger, config: Con
 
 
 
-def SMTP_HELO(message: str, connection: socket) -> None:
-    send_message = tuple("250 OK", "Hello "+ message + "\r\n")
+def SMTP_HELO(server_domain_name: str, connection: socket) -> None:
+    send_message = tuple("250 OK", "Hello "+ server_domain_name + "\r\n")
     pickle_data = pickle.dumps(send_message)
     connection.sendall(pickle_data)
 
-    pass
 
 def SMTP_MAIL_FROM():
     pass

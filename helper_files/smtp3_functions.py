@@ -2,23 +2,24 @@ from typing import List
 import socket
 import pickle
 from helper_files.ConfigWrapper import ConfigWrapper
+from structlog import BoundLogger
 
     # TODO: see image with typical sequence to implement functionality
     # TODO: implement "incorrect format" responses as well if this function fails
     # TODO: see the error code image 220 -> domain of receiver
-def smtp_helo(smtp_socket: socket, server_domain_name: str, config: ConfigWrapper) -> str:
+def smtp_helo(smtp_socket: socket, server_domain_name: str, config: ConfigWrapper, logger: BoundLogger) -> None:
     send_message = tuple("HELO", server_domain_name)
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
 
-    response = smtp_socket.recv(config.get_max_size_package_tcp())
-    tuple_data = pickle.loads(response)
+    response_message = smtp_socket.recv(config.get_max_size_package_tcp())
+    tuple_data = pickle.loads(response_message)
     command = tuple_data[0]
-    message = tuple_data[1]
+    server_domain_name = tuple_data[1]
     if command == "250 OK":
-        return str(command) + " " + str(message)
+        logger.info(str(command) + " " + str(server_domain_name))
     else:
-        return "ERROR: " + str(command) + " " + str(message)
+        logger.error("This is the incorrect response format")
 
 def smtp_mail_from(sender: str):
     # TODO: see image with typical sequence to implement functionality
