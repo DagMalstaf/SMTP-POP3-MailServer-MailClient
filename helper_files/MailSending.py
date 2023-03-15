@@ -47,8 +47,8 @@ class MailSending(Action):
                     smtp_socket.listen()
                     conn, addr = smtp_socket.accept()
                     with conn:
-                        self._logger.info(f"Connected by {addr}")
-                        smtp_helo(message.getToDomain_name())
+                        self._logger.info(f"{addr} Service Ready")
+                        smtp_helo(conn, self._config.get_host(), self._config, self._logger)
                         smtp_mail_from(message.getFrom())
                         smtp_rcpt_to(message.getTo())
                         smtp_data(message.getMessageBody())
