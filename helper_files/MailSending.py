@@ -49,7 +49,7 @@ class MailSending(Action):
                     with conn:
                         self._logger.info(f"{addr} Service Ready")
                         smtp_helo(conn, self._config.get_host(), self._config, self._logger)
-                        smtp_mail_from(message.getFrom())
+                        smtp_mail_from(self._logger, self._config, conn, message.getFrom)
                         smtp_rcpt_to(message.getTo())
                         smtp_data(message.getMessageBody())
                         smtp_quit(receiver = message.getTo())
