@@ -116,13 +116,13 @@ def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, me
     elif command == "MAIL_FROM":
         SMTP_MAIL_FROM(logger, config, command, message, connection)
     elif command == "RCPT_TO":
-        SMTP_RCPT_TO()
+        SMTP_RCPT_TO(logger, config, command, message, connection)
     elif command == "DATA":
-        SMTP_DATA()
+        SMTP_DATA(logger, config, command, message, connection)
     elif command == "QUIT":
         SMTP_QUIT()
     else:
-        print(f"Invalid command: {command}")
+        logger.info(f"Invalid command: {command}")
 
 
 
@@ -149,8 +149,15 @@ def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, messa
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
 
-def SMTP_DATA():
-    pass
+def SMTP_DATA(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket):
+    logger.info(command)
+    logger.info("354 Enter Mail, end with '.' on a line by itself")
+    #write
+    send_message = tuple("250", " OK message accepted for delivery"  + "\r\n")
+    pickle_data = pickle.dumps(send_message)
+    logger.info(send_message[0] + send_message[1])
+    connection.sendall(pickle_data)
+    
 
 def SMTP_QUIT():
     pass

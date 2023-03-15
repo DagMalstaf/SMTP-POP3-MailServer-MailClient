@@ -3,6 +3,7 @@ import socket
 import pickle
 from helper_files.ConfigWrapper import ConfigWrapper
 from structlog import BoundLogger
+from helper_files.MessageWrapper import MessageWrapper
 
     
 def smtp_helo(smtp_socket: socket, server_domain_name: str, config: ConfigWrapper, logger: BoundLogger) -> None:
@@ -50,8 +51,22 @@ def smtp_rcpt_to( logger: BoundLogger, config: ConfigWrapper, smtp_socket: socke
         logger.error("This is the incorrect response format")
 
 
-def smtp_data(message_body: str):
-    # TODO: see image with typical sequence to implement functionality
+def smtp_data(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, data: MessageWrapper) -> None:
+    send_message = tuple("DATA", data)
+    pickle_data = pickle.dumps(send_message)
+    smtp_socket.sendall(pickle_data)
+
+    response_message = smtp_socket.recv(config.get_max_size_package_tcp())
+    tuple_data = pickle.loads(response_message)
+    command = tuple_data[0] 
+
+    if command == "250":
+        logger.info("Mail sent successfully")
+    else:
+        logger.error("This is the incorrect response format")
+
+
+
     pass
 
 
