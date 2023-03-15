@@ -7,6 +7,7 @@ from helper_files.ConfigWrapper import ConfigWrapper
 import hashlib
 
 
+
 """
 Function: hash_string(password: str) -> str
 

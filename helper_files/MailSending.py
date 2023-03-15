@@ -50,8 +50,8 @@ class MailSending(Action):
                         self._logger.info(f"{addr} Service Ready")
                         smtp_helo(conn, self._config.get_host(), self._config, self._logger)
                         smtp_mail_from(self._logger, self._config, conn, message.getFrom)
-                        smtp_rcpt_to(message.getTo())
-                        smtp_data(message.getMessageBody())
+                        smtp_rcpt_to(self._logger, self._config, conn,message.getTo())
+                        smtp_data(self._logger, self._config, conn, message)
                         smtp_quit(receiver = message.getTo())
                         self._logger.info("Mail sent successfully")
                 correct_format = True
