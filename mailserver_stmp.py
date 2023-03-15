@@ -31,13 +31,44 @@ def retrieve_port() -> int:
 
 
 # consumer
-def service_mail_request(data: str, config: ConfigWrapper) -> None:
+def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor, conn: socket) -> None:
+    with conn:
+            while True:
+                try:
+                    data = conn.recv(config.get_max_size_package_tcp())
+                    if not data:
+                        logger.info("No data received, closing connection")
+                        break
+                    tuple_data = pickle.loads(data)
+                    command = tuple_data[0]
+                    data = tuple_data[1]
+                    command_handler(logger, config, command, data, executor, conn)
+
+                except ConnectionResetError:
+                    # client has closed the connection unexpectedly
+                    logger.exception("Client closed the connection unexpectedly")
+                    break
+                except socket.timeout:
+                    # no data received within timeout period
+                    logger.exception("No data received from client within timeout period")
+                except KeyboardInterrupt:
+                    # user has interrupted the program execution
+                    logger.info("Program interrupted by user")
+                    break
+                except ValueError:
+                    # data received cannot be converted to string
+                    logger.exception("Received data cannot be converted to string")
+                except Exception as e:
+                    # any other exception
+                    logger.exception(f"An error occurred: {e}")
+                    break
+
     data = MessageWrapper()
     usernameTo = data.getToUsername()
     write_to_mailbox(usernameTo, data.getMessageBody())
     
 
-def concurrent_mail_service(data: str, config: ConfigWrapper, executor: ThreadPoolExecutor) -> None:
+def concurrent_mail_service(logger: BoundLogger, config: ConfigWrapper, data: str,  executor: ThreadPoolExecutor, conn: socket) -> None:
     # generate a unique task ID
     task_id = uuid.uuid4().hex
     
@@ -48,8 +79,8 @@ def concurrent_mail_service(data: str, config: ConfigWrapper, executor: ThreadPo
     }
     
     # submit the task to the thread pool
-    future = executor.submit(service_mail_request, data, config)
-    print(f"Task {task_id} submitted to thread pool: {future}")
+    future = executor.submit(service_mail_request, logger, config, data, executor, conn)
+    logger.info(f"Task {task_id} submitted to thread pool: {future}")
     
     # update the task status to running
     tasks[task_id]["status"] = "running"
@@ -80,9 +111,9 @@ def get_task_dict() -> dict:
 def get_task(task_id: str) -> str:
     return tasks.get(task_id)
 
-def command_handler(command: str, message: str, logger: BoundLogger, config: ConfigWrapper, executor: ThreadPoolExecutor, connection: socket) -> None:
+def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket) -> None:
     if command == "HELO":
-        SMTP_HELO(message, connection)
+        SMTP_HELO(logger, config, message, connection, executor)
     elif command == "MAIL_FROM":
         SMTP_MAIL_FROM()
     elif command == "RCPT_TO":
@@ -96,11 +127,13 @@ def command_handler(command: str, message: str, logger: BoundLogger, config: Con
 
 
 
-def SMTP_HELO(server_domain_name: str, connection: socket) -> None:
+def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, server_domain_name: str, connection: socket, executor: ThreadPoolExecutor) -> None:
+    # must be asynchronous
+    
+    concurrent_mail_service(logger, config, server_domain_name, executor, connection)
     send_message = tuple("250 OK", "Hello "+ server_domain_name + "\r\n")
     pickle_data = pickle.dumps(send_message)
     connection.sendall(pickle_data)
-
 
 def SMTP_MAIL_FROM():
     pass
@@ -126,15 +159,12 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
                 try:
                     data = conn.recv(config.get_max_size_package_tcp())
                     if not data:
-                        # no data received, client has closed the connection
                         logger.info("No data received, closing connection")
                         break
                     tuple_data = pickle.loads(data)
                     command = tuple_data[0]
                     data = tuple_data[1]
-                    message = str(data)
-                    command_handler(command, message, logger, config, executor, conn)
-                    #concurrent_mail_service(message, config, executor)
+                    command_handler(logger, config, command, data,  executor, conn)
 
                 except ConnectionResetError:
                     # client has closed the connection unexpectedly

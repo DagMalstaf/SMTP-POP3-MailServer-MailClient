@@ -24,6 +24,8 @@ def smtp_helo(smtp_socket: socket, server_domain_name: str, config: ConfigWrappe
 def smtp_mail_from(sender: str):
     # TODO: see image with typical sequence to implement functionality
     # TODO: implement "incorrect format" responses as well if this function fails
+    
+    
     pass
 
 
