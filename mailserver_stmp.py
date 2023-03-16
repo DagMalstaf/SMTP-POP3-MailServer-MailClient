@@ -21,7 +21,7 @@ def main() -> None:
     logger = get_logger()
     config = ConfigWrapper(logger,"general_config")
     # create a thread pool with 100 threads
-    executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
+    executor = ThreadPoolExecutor(max_workers=config.get_max_thread_load())
     loop_server(logger, config, listening_port, executor)
 
 
@@ -132,7 +132,7 @@ def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message:
     logger.info(command + " " + message)
     #TODO: must be asynchronous
     concurrent_mail_service(logger, config, message, executor, connection)
-    send_message = tuple("250 OK", "Hello "+ message + "\r\n")
+    send_message:tuple  = "250 OK", "Hello "+ message + "\r\n"
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -140,7 +140,7 @@ def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message:
 
 def SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + ": " + message)
-    send_message = tuple("250", " " + message + "... Sender ok" + "\r\n")
+    send_message:tuple  = "250", " " + message + "... Sender ok" + "\r\n"
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -148,7 +148,7 @@ def SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, mes
 
 def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + ": " + message)
-    send_message = tuple("250", " " + " root... Recipient ok" + "\r\n")
+    send_message: tuple = "250", " " + " root... Recipient ok" + "\r\n"
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -157,8 +157,9 @@ def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, messa
 def SMTP_DATA(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket):
     logger.info(command)
     logger.info("354 Enter Mail, end with '.' on a line by itself")
+    message = MessageWrapper(logger, config, message)
     write_to_mailbox(logger, config, message)
-    send_message = tuple("250", " OK message accepted for delivery"  + "\r\n")
+    send_message: tuple = "250", " OK message accepted for delivery"  + "\r\n"
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
