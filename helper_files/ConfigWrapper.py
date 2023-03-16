@@ -5,7 +5,6 @@ import yaml
 from yaml.loader import SafeLoader
 
 from custom_exceptions.ConfigReadError import ConfigReadError
-from helper_files.Action import Action
 from helper_files.Exit import Exit
 from helper_files.MailManagement import MailManagement
 from helper_files.MailSending import MailSending
@@ -60,7 +59,7 @@ class ConfigWrapper:
         return self._loaded_config_dictionary["actions_for_mail_management"]
 
     @staticmethod
-    def get_mail_client_actions_as_list_of_classes() -> List[Action]:
+    def get_mail_client_actions_as_list_of_classes() -> list[Type[MailSending | MailManagement | Exit]]:
         return list(CLIENT_MAIL_ACTIONS.values())
 
     @staticmethod
@@ -74,7 +73,8 @@ class ConfigWrapper:
     def get_mail_management_actions_as_string(self) -> str:
         return ', '.join(self.get_mail_management_actions_as_list_of_strings())
 
-    def get_mail_client_action_as_class(self, action: str) -> Action:
+    def get_mail_client_action_as_class(self, action: str) -> Type[MailSending] | Type[MailManagement] | Type[
+        Exit] | None:
         try:
             return CLIENT_MAIL_ACTIONS.get(action)
         except KeyError as e:
@@ -82,7 +82,7 @@ class ConfigWrapper:
                               f"Possible actions are: [{self.get_mail_client_actions_as_string()}]")
             raise e
 
-    def get_mail_management_action_as_fuction(self, action: str) -> Action:
+    def get_mail_management_action_as_fuction(self, action: str) -> (...):
         try:
             return MAIL_MANAGEMENT_ACTIONS.get(action)
         except KeyError as e:
