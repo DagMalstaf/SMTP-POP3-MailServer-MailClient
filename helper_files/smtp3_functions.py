@@ -7,7 +7,7 @@ from helper_files.MessageWrapper import MessageWrapper
 
     
 def smtp_helo(smtp_socket: socket, server_domain_name: str, config: ConfigWrapper, logger: BoundLogger) -> None:
-    send_message = tuple("HELO", server_domain_name)
+    send_message: tuple = "HELO", server_domain_name
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
 
@@ -20,7 +20,7 @@ def smtp_helo(smtp_socket: socket, server_domain_name: str, config: ConfigWrappe
         logger.error("There was an error connecting to the SMTP server")
 
 def smtp_mail_from(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, from_address: str) -> None:
-    send_message = tuple("MAIL_FROM", from_address)
+    send_message: tuple = "MAIL_FROM", from_address
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
 
@@ -37,7 +37,7 @@ def smtp_mail_from(logger: BoundLogger, config: ConfigWrapper, smtp_socket: sock
 
 
 def smtp_rcpt_to( logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, to_address: str) -> None:
-    send_message = tuple("RCPT_TO", to_address)
+    send_message: tuple = "RCPT_TO", to_address
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
 
@@ -52,7 +52,7 @@ def smtp_rcpt_to( logger: BoundLogger, config: ConfigWrapper, smtp_socket: socke
 
 
 def smtp_data(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, data: MessageWrapper) -> None:
-    send_message = tuple("DATA", data)
+    send_message: tuple = "DATA", data
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
 

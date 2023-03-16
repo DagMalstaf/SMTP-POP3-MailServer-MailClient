@@ -7,7 +7,7 @@ from helper_files.ConfigWrapper import ConfigWrapper
 
 
 class MessageWrapper():
-    def __init__(self, logger: BoundLogger, config: ConfigWrapper ,message: str) -> str:
+    def __init__(self, logger: BoundLogger, config: ConfigWrapper ,message: str) -> None:
         self._message = message
         self._config = config
         self._logger = logger
@@ -56,6 +56,6 @@ class MessageWrapper():
     
     def verify_format(self) -> bool:
         pattern = r'^From: \S+@\S+\nTo: \S+@\S+\nSubject: .{1,150}\n(.+\n)*\.$'
-        return bool(regex.match(pattern, self.message))
+        return bool(regex.match(pattern, self._message))
 
  

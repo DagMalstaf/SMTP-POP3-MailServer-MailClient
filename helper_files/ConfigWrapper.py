@@ -1,5 +1,5 @@
 
-from typing import List, Dict, Callable
+from typing import List, Dict, Callable, Type
 from structlog import BoundLogger
 import yaml
 from yaml.loader import SafeLoader
@@ -11,7 +11,7 @@ from helper_files.MailManagement import MailManagement
 from helper_files.MailSending import MailSending
 from helper_files.pop3_functions import pop3_count, pop3_retrieve, pop3_list, pop3_delete, pop3_quit
 
-CLIENT_MAIL_ACTIONS: Dict[str, Action] ={
+CLIENT_MAIL_ACTIONS: Dict[str, Type[MailSending | MailManagement | Exit]] ={
     "Mail Sending": MailSending ,
     "Mail Management": MailManagement,
     "Exit": Exit

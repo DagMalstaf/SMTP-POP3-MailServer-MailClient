@@ -38,6 +38,8 @@ def pop3_delete() -> None:
 def pop3_count() -> None:
     pass
 
+def pop3_quit() -> None:
+    pass
 
 
 
