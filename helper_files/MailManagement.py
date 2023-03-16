@@ -1,5 +1,7 @@
 from structlog import BoundLogger
 from typing import TYPE_CHECKING
+import socket
+
 
 from custom_exceptions.RestartMailServerError import RestartMailServerError
 from helper_files.Action import Action
