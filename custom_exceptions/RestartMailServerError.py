@@ -1,0 +1,2 @@
+class RestartMailServerError(Exception):
+    pass

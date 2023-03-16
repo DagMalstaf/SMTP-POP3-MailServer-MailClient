@@ -4,14 +4,15 @@ from typing import List
 from structlog import BoundLogger
 
 from helper_files.Action import Action
-from helper_files.ConfigWrapper import ConfigWrapper
 from helper_files.MessageWrapper import MessageWrapper
 from helper_files.smtp3_functions import smtp_helo, smtp_mail_from, smtp_rcpt_to, smtp_data, smtp_quit
-
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from helper_files.ConfigWrapper import ConfigWrapper
 # SMTP
 class MailSending(Action):
 
-    def __init__(self, logger: BoundLogger, config: ConfigWrapper,ip_address,SMTP_port, POP3_port, username, password):
+    def __init__(self, logger: BoundLogger, config: "ConfigWrapper",ip_address,SMTP_port, POP3_port, username, password):
         super().__init__(logger, config, ip_address, SMTP_port, POP3_port, username, password)
         pass
 
