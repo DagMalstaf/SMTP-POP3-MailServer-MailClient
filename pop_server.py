@@ -184,7 +184,56 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, command: str, message:
 
 def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + message)
-    send_message = tuple("250", " " + message + "... Sender ok" + "\r\n")
+    send_message = tuple("+OK", " Thanks for using POP3 server")
+    """
+    def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+    logger.info(command + message)
+    
+    # 1. Delete any messages marked for deletion
+    mailbox_semaphore.acquire()
+    try:
+        username = get_username_from_message(message)
+        mailbox_file = os.path.join(username, 'my_mailbox.txt')
+        
+        with open(mailbox_file, 'r') as f:
+            mailbox = f.readlines()
+        
+        deleted_messages = []
+        updated_mailbox = []
+        
+        for i, msg in enumerate(mailbox):
+            if msg.startswith('X'):
+                deleted_messages.append(i)
+            else:
+                updated_mailbox.append(msg)
+        
+        # Remove deleted messages from the mailbox
+        for i in reversed(deleted_messages):
+            del updated_mailbox[i]
+        
+        # Rewrite the mailbox file without deleted messages
+        with open(mailbox_file, 'w') as f:
+            f.writelines(updated_mailbox)
+    
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+    
+    finally:
+        mailbox_semaphore.release()
+    
+    # 2. Close any open files
+    try:
+        connection.close()
+    
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+    
+    send_message = tuple("+OK", " Thanks for using POP3 server")
+    pickle_data = pickle.dumps(send_message)
+    logger.info(send_message[0] + send_message[1])
+    connection.sendall(pickle_data)
+
+    """
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)

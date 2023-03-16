@@ -70,9 +70,8 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, pop3_socket, password)
         return True
     
 
-def pop3_QUIT(**kwargs) -> None:
-    pop3_sockett = kwargs.get("pop3_socket")
-    send_message = tuple("Quit ", " request to terminate the connection to the pop3 server")
+def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, pop3_socket) -> None:
+    send_message = tuple("Quit ", " Request to terminate the connection to the pop3 server")
     pickle_data = pickle.dumps(send_message)
     pop3_socket.sendall(pickle_data)
 

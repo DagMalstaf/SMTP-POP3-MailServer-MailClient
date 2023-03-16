@@ -32,7 +32,7 @@ class MailManagement(Action):
                         try:
                             action_string = input(f"Provide action to perform [{self._config.get_mail_management_actions_as_string()}]: ")
                             if action_string == "Quit":
-                                pop3_QUIT()
+                                pop3_QUIT(self._logger, self._config, conn)
                             elif action_string == "Status":
                                 pop3_STAT()
                             elif action_string == "List":
