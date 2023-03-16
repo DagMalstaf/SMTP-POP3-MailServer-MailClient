@@ -35,7 +35,7 @@ class MailSending(Action):
     None
     """
     def action(self):
-        print("Enter mail, end with '.' on a single line by itself")
+        self._logger.info("Enter mail, end with '.' on a single line by itself")
         correct_format = False
         while not correct_format:
             input_list: List[str] = list()
