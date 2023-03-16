@@ -1,4 +1,3 @@
-from typing import List
 
 
 # https://www.geeksforgeeks.org/args-kwargs-python/
@@ -40,6 +39,4 @@ def pop3_count() -> None:
 
 def pop3_quit() -> None:
     pass
-
-
 

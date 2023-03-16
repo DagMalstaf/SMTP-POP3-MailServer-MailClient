@@ -16,16 +16,16 @@ class MessageWrapper():
         return self._message
     
     def __getFromIndex(self) -> int:
-        return self._message.find(self.getFrom()) + len(self._config.getFrom())
+        return self._message.find(self.getFrom()) + len(self._config.getFromConfig())
     
     def __getToIndex(self) -> int:
-        return self._message.find(self.getTo()) + len(self._config.getTo())
+        return self._message.find(self.getTo()) + len(self._config.getToConfig())
     
     def __getSubjectIndex(self) -> int:
-        return self._message.find(self.getSubject()) + len(self._config.getSubject())
+        return self._message.find(self.getSubject()) + len(self._config.getSubjectConfig())
     
     def __getReceivedIndex(self) -> int:
-        return self._message.find(self.getReceived()) + len(self._config.getReceived())
+        return self._message.find(self.getReceived()) + len(self._config.getRecievedConfig())
       
     def getFrom(self) -> str:
         return self._message[self.__getFromIndex:self.__getToIndex]
