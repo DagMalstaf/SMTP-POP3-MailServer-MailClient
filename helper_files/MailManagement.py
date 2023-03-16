@@ -8,7 +8,7 @@ from helper_files.Action import Action
 from typing import TYPE_CHECKING
 
 from helper_files.functions.general_helper_functions import retrieve_command_promt_input
-from helper_files.functions.pop3_functions import pop3_authentication, pop3_list
+from helper_files.functions.pop3_functions import pop3_authentication, pop3_LIST
 if TYPE_CHECKING:
     from helper_files.ConfigWrapper import ConfigWrapper
 
