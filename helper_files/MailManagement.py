@@ -68,7 +68,9 @@ class MailManagement(Action):
                         else:
                             self._logger.info("Password authentication successful")
                             return True
-        except:
+        except Exception as e:
+            # any other exception
+            self._logger.exception(f"An error occurred: {e}")
             return False
 
 
