@@ -31,11 +31,11 @@ To start the mail client program, call the function like this: main(logger, conf
 
 """
 def main(logger: BoundLogger, config: ConfigWrapper ):
-    ip_address,SMTP_port, POP3_port, username, password = get_parameters_mail_client()
+    ip_address, SMTP_port, POP3_port, username = get_parameters_mail_client()
     while True:
         try:
             action = retrieve_command_promt_input(f"Please select action [{config.get_mail_client_actions_as_string()}]: ")
-            wrapper_class_mail_action = get_action(logger,action)(logger, config,ip_address,SMTP_port, POP3_port, username, password)
+            wrapper_class_mail_action = get_action(logger,action)(logger, config,ip_address,SMTP_port, POP3_port, username)
             logger.info(f"succesfully starting {wrapper_class_mail_action} action")
             wrapper_class_mail_action.action()
         except Exception as e:

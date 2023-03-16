@@ -33,7 +33,7 @@ def main() -> None:
     listening_port = retrieve_port()
     logger = get_logger()
     config = ConfigWrapper(logger,"general_config")
-    executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
+    executor = ThreadPoolExecutor(max_workers=config.get_max_thread_load())
     loop_server(logger, config, listening_port, executor)
 
 """

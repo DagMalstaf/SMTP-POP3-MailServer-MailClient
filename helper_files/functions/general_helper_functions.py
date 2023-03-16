@@ -45,16 +45,36 @@ To retrieve an integer input from the user, call the function like this: retriev
 To hash the input and retrieve the hashed value, call the function like this: retrieve_command_promt_input("Enter your password: ", hash_input=True)
 
 """
-def retrieve_command_promt_input(message_to_display:str, cast_to_int: bool = False, hash_input: bool = False) -> Union[str,int]:
+def retrieve_command_promt_input(message_to_display:str, cast_to_int: bool = False, hash_input: bool = False, port: bool= False) -> Union[str,int]:
     try:
+        if port:
+            command_prompt_input = retrieve_port(message_to_display)
+            return command_prompt_input
         command_prompt_input = input(message_to_display)
         if cast_to_int:
             command_prompt_input = int(command_prompt_input)
         if hash_input:
+            if command_prompt_input == "quit":
+                return "quit"
             command_prompt_input = hash_string(command_prompt_input)
         return command_prompt_input
     except Exception as e:
             print(f"Error: {e}")
+
+
+
+def retrieve_port(message_to_display:str) -> int:
+    try:
+        my_port = int(input(message_to_display + " (non-privileged ports are > 1023): "))
+        if my_port > 1023:
+            return my_port
+        
+        else:
+            print("Port number must be greater than 1023.")
+            return retrieve_port(message_to_display)
+    except ValueError:
+        print("Invalid input. Please enter a valid integer.")
+        return retrieve_port(message_to_display)
 
 
 """
@@ -84,11 +104,11 @@ Example Usage:
 server_ip, SMTP_server_port, POP3_server_port, username, password = get_parameters_mail_client()
 
 """
-def get_parameters_mail_client() -> tuple[str | int, str | int, str | int, str | int, str]:
+def get_parameters_mail_client() -> tuple[str | int, str | int, str | int, str | int]:
     server_ip = retrieve_command_promt_input("Give IP address to connect to: ")
-    SMTP_server_port = retrieve_command_promt_input("Give SMTP server port: ", cast_to_int=True)
-    POP3_server_port = retrieve_command_promt_input("Give pop3 server port: ", cast_to_int=True)
+    SMTP_server_port = retrieve_command_promt_input("Give SMTP server port", cast_to_int=True, port=True)
+    POP3_server_port = retrieve_command_promt_input("Give pop3 server port", cast_to_int=True, port=True)
     username = retrieve_command_promt_input("Provide username of mail account: ")
-    password = retrieve_command_promt_input(" Provide password of mail account: ", hash_input=True)
-    return server_ip, SMTP_server_port, POP3_server_port, username, password
+    
+    return server_ip, SMTP_server_port, POP3_server_port, username
 

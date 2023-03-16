@@ -36,19 +36,19 @@ def retrieve_port() -> int:
 
 
 def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor: ThreadPoolExecutor) -> None:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
-        smtp_socket.bind((config.get_host(), port))
-        smtp_socket.listen()
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as pop3_socket:
+        pop3_socket.bind((config.get_host(), port))
+        pop3_socket.listen()
         try:
             while True:
-                conn, addr = smtp_socket.accept()
+                conn, addr = pop3_socket.accept()
                 logger.info(f"{addr} Service Ready")
                 data = conn.recv(config.get_max_size_package_tcp())
                 tuple_data = pickle.loads(data)
                 command = tuple_data[0]
                 data = tuple_data[1]
-                if command == "HELO":
-                    executor.submit(handle_helo, logger, config, data, conn, executor)
+                if command == "USER ":
+                    executor.submit(handle_user, logger, config, data, conn, executor)
                 else:
                     logger.info(f"Invalid command: {command}")
 
@@ -69,9 +69,11 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
             logger.exception(f"An error occurred: {e}")
             
 
-def handle_helo(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
-    SMTP_HELO(logger, config, "HELO", message, connection, executor)
-    executor.submit(service_mail_request, logger, config, message, executor, connection)
+def handle_user(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
+    if pop3_USER(logger, config, "USER ", message, connection, executor):
+        executor.submit(service_mail_request, logger, config, message, executor, connection)
+
+            
 
 
 def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor, conn: socket) -> None:
@@ -108,36 +110,85 @@ def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, 
 
 
 def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket) -> None:
-    if command == "HELO":
-        SMTP_HELO(logger, config, command,  message, connection, executor)
-    elif command == "MAIL FROM:":
-        SMTP_MAIL_FROM(logger, config, command, message, connection)
-    elif command == "RCPT TO:":
-        SMTP_RCPT_TO(logger, config, command, message, connection)
-    elif command == "DATA":
-        SMTP_DATA(logger, config, command, message, connection)
+    if command == "USER ":
+        pop3_USER(logger, config, command,  message, connection, executor)
+    elif command == "PASS ":
+        pop3_PASS(logger, config, command, message, connection)
     elif command == "QUIT":
-        SMTP_QUIT(logger, config, command, message, connection)
+        pop3_QUIT(logger, config, command, message, connection)
+    elif command == "STAT":
+        pop3_STAT(logger, config, command, message, connection)
+    elif command == "LIST":
+        pop3_LIST(logger, config, command, message, connection)
+    elif command == "RETR":
+        pop3_RETR(logger, config, command, message, connection)
+    elif command == "DELE":
+        pop3_DELE(logger, config, command, message, connection)
     else:
         logger.info(f"Invalid command: {command}")
 
 
-def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
+def pop3_USER(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
     logger.info(command + message)
-    send_message = tuple("250 OK", "Hello "+ message + "\r\n")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
+    usernames = set()
+    with open('userinfo.txt', 'r') as file:
+        for line in file:
+            username, password = line.strip().split()
+            usernames.add(username)
+    try:
+        if message in usernames:
+            send_message = tuple("+OK", " User accepted")
+            pickle_data = pickle.dumps(send_message)
+            logger.info(send_message[0] + send_message[1])
+            connection.sendall(pickle_data)
+        else:
+            send_message = tuple("-ERR", " [AUTH] Invalid username")
+            pickle_data = pickle.dumps(send_message)
+            logger.info(send_message[0] + send_message[1])
+            connection.sendall(pickle_data)
+    except Exception as e:        
+        logger.exception(f"An error occurred: {e}")
+        send_message = tuple("-ERR", " [AUTH] Authentication failed due to server error")
+        pickle_data = pickle.dumps(send_message)
+        logger.info(send_message[0] + send_message[1])
+        connection.sendall(pickle_data)
 
 
-def SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
+    logger.info(command + message)
+    passwords = set()
+    with open('userinfo.txt', 'r') as file:
+        for line in file:
+            username, password = line.strip().split()
+            passwords.add(password)
+    try:
+        if message in passwords:
+            send_message = tuple("+OK", " Password accepted")
+            pickle_data = pickle.dumps(send_message)
+            logger.info(send_message[0] + send_message[1])
+            connection.sendall(pickle_data)
+        else:
+            send_message = tuple("-ERR", " [AUTH] Invalid password")
+            pickle_data = pickle.dumps(send_message)
+            logger.info(send_message[0] + send_message[1])
+            connection.sendall(pickle_data)
+    except Exception as e:        
+        logger.exception(f"An error occurred: {e}")
+        send_message = tuple("-ERR", " [AUTH] Authentication failed due to server error")
+        pickle_data = pickle.dumps(send_message)
+        logger.info(send_message[0] + send_message[1])
+        connection.sendall(pickle_data)
+
+
+
+def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + message)
     send_message = tuple("250", " " + message + "... Sender ok" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
 
-def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + message)
     send_message = tuple("250", " " + " root... Recipient ok" + "\r\n")
     pickle_data = pickle.dumps(send_message)
@@ -145,7 +196,7 @@ def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, messa
     connection.sendall(pickle_data)
 
 
-def SMTP_DATA(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command)
     logger.info("354 Enter Mail, end with '.' on a line by itself")
     write_to_mailbox(logger, config, message, mailbox_semaphore)
@@ -155,13 +206,21 @@ def SMTP_DATA(logger: BoundLogger, config: ConfigWrapper, command: str, message:
     connection.sendall(pickle_data)
     
 
-def SMTP_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+def pop3_RETR(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command)
     send_message = tuple("221", message + " Closing Connection" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
-    connection.close()
+    
+
+def pop3_DELE(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+    logger.info(command)
+    send_message = tuple("221", message + " Closing Connection" + "\r\n")
+    pickle_data = pickle.dumps(send_message)
+    logger.info(send_message[0] + send_message[1])
+    connection.sendall(pickle_data)
+    
 
 
 def write_to_mailbox(logger: BoundLogger, config: ConfigWrapper, message: MessageWrapper, file_semaphore: threading.Semaphore) -> None:
