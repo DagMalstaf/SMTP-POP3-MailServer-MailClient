@@ -2,17 +2,21 @@ from typing import List
 
 from structlog import BoundLogger
 import socket
-from helper_files.Action import Action
-from helper_files.ConfigWrapper import ConfigWrapper
-from helper_files.pop3_functions import pop3_authentication, pop3_list
-from mail_client import retrieve_command_promt_input, main
-from helper_files.pop3_functions import pop3_stat, pop3_list, pop3_retrieve, pop3_delete, pop3_count
 
+from custom_exceptions.RestartMailServerError import RestartMailServerError
+from helper_files.Action import Action
+from typing import TYPE_CHECKING
+
+from helper_files.helper_functions import retrieve_command_promt_input
+from helper_files.pop3_functions import pop3_authentication, pop3_list
+from helper_files.pop3_functions import pop3_stat, pop3_list, pop3_retrieve, pop3_delete, pop3_count
+if TYPE_CHECKING:
+    from helper_files.ConfigWrapper import ConfigWrapper
 
 
 class MailManagement(Action):
 
-    def __init__(self, logger: BoundLogger, config: ConfigWrapper,ip_address,SMTP_port, POP3_port, username, password):
+    def __init__(self, logger: BoundLogger, config: "ConfigWrapper",ip_address,SMTP_port, POP3_port, username, password):
         super().__init__(logger, config,ip_address,SMTP_port, POP3_port, username, password)
         pass
 
@@ -42,10 +46,8 @@ class MailManagement(Action):
         print("Provide new credentials or q to restart")
         self._username = retrieve_command_promt_input("Username: ")
         if self._username == "q":
-            main(self._logger, self._config)
-            exit()
+            raise RestartMailServerError("Restarting Mail Server")
         self._password = retrieve_command_promt_input("Password: ", hash_input=True)
         if self._password == "q":
-            main(self._logger, self._config)
-            exit()
+            raise RestartMailServerError("Restarting Mail Server")
         self.action()

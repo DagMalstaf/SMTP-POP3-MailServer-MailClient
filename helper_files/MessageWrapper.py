@@ -1,7 +1,10 @@
 from structlog import BoundLogger
 
-import ConfigWrapper
+
 import regex
+
+from helper_files.ConfigWrapper import ConfigWrapper
+
 
 class MessageWrapper():
     def __init__(self, logger: BoundLogger, config: ConfigWrapper ,message: str) -> str:
