@@ -1,12 +1,23 @@
 import socket
 import threading
-import uuid
-import typing
+import pickle
+import os
+
 from helper_files.MessageWrapper import MessageWrapper
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from structlog import get_logger, BoundLogger
 from helper_files.ConfigWrapper import ConfigWrapper
 
+# define a semaphore so only 1 thread can access the mailbox.
+mailbox_semaphore = threading.Semaphore(1)
+
+
+def main() -> None:
+    listening_port = retrieve_port()
+    logger = get_logger()
+    config = ConfigWrapper(logger,"general_config")
+    executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
+    loop_server(logger, config, listening_port, executor)
 
 
 def retrieve_port() -> int:
@@ -22,51 +33,147 @@ def retrieve_port() -> int:
         print("Invalid input. Please enter a valid integer.")
         return retrieve_port()
 
+
+
 def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor: ThreadPoolExecutor) -> None:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
         smtp_socket.bind((config.get_host(), port))
         smtp_socket.listen()
-        conn, addr = smtp_socket.accept()
-        with conn:
-            logger.info(f"Connected by {addr}")
+        try:
             while True:
-                try:
-                    data = conn.recv(config.get_max_size_package_tcp())
-                    if not data:
-                        # no data received, client has closed the connection
-                        logger.info("No data received, closing connection")
-                        break
-                    message = str(data)
-                    concurrent_mail_service(message, config, executor)
+                conn, addr = smtp_socket.accept()
+                logger.info(f"{addr} Service Ready")
+                data = conn.recv(config.get_max_size_package_tcp())
+                tuple_data = pickle.loads(data)
+                command = tuple_data[0]
+                data = tuple_data[1]
+                if command == "HELO":
+                    executor.submit(handle_helo, logger, config, data, conn, executor)
+                else:
+                    logger.info(f"Invalid command: {command}")
 
-                except ConnectionResetError:
-                    # client has closed the connection unexpectedly
-                    logger.exception("Client closed the connection unexpectedly")
+        except ConnectionResetError:
+            # client has closed the connection unexpectedly
+            logger.exception("Client closed the connection unexpectedly")
+        except socket.timeout:
+            # no data received within timeout period
+            logger.exception("No data received from client within timeout period")
+        except KeyboardInterrupt:
+            # user has interrupted the program execution
+            logger.info("Program interrupted by user") 
+        except ValueError:
+            # data received cannot be converted to string
+            logger.exception("Received data cannot be converted to string")
+        except Exception as e:
+            # any other exception
+            logger.exception(f"An error occurred: {e}")
+            
+
+def handle_helo(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
+    SMTP_HELO(logger, config, "HELO", message, connection, executor)
+    executor.submit(service_mail_request, logger, config, message, executor, connection)
+
+
+def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor, conn: socket) -> None:
+    with conn:
+        while True:
+            try:
+                data = conn.recv(config.get_max_size_package_tcp())
+                if not data:
+                    logger.info("No data received, closing connection")
                     break
-                except socket.timeout:
-                    # no data received within timeout period
-                    logger.exception("No data received from client within timeout period")
-                except KeyboardInterrupt:
-                    # user has interrupted the program execution
-                    logger.info("Program interrupted by user")
-                    break
-                except ValueError:
-                    # data received cannot be converted to string
-                    logger.exception("Received data cannot be converted to string")
-                except Exception as e:
-                    # any other exception
-                    logger.exception(f"An error occurred: {e}")
-                    break
+                tuple_data = pickle.loads(data)
+                command = tuple_data[0]
+                data = tuple_data[1]
+                command_handler(logger, config, command, data, executor, conn)
 
-def main() -> None:
-    listening_port = retrieve_port()
-    logger = get_logger()
-    config = ConfigWrapper(logger,"general_config")
+            except ConnectionResetError:
+                # client has closed the connection unexpectedly
+                logger.exception("Client closed the connection unexpectedly")
+                break
+            except socket.timeout:
+                # no data received within timeout period
+                logger.exception("No data received from client within timeout period")
+            except KeyboardInterrupt:
+                # user has interrupted the program execution
+                logger.info("Program interrupted by user")
+                break
+            except ValueError:
+                # data received cannot be converted to string
+                logger.exception("Received data cannot be converted to string")
+            except Exception as e:
+                # any other exception
+                logger.exception(f"An error occurred: {e}")
+                break
 
-    # create a thread pool with 100 threads
-    executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
-    loop_server(logger, config, listening_port, executor)
 
+def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket) -> None:
+    if command == "HELO":
+        SMTP_HELO(logger, config, command,  message, connection, executor)
+    elif command == "MAIL FROM:":
+        SMTP_MAIL_FROM(logger, config, command, message, connection)
+    elif command == "RCPT TO:":
+        SMTP_RCPT_TO(logger, config, command, message, connection)
+    elif command == "DATA":
+        SMTP_DATA(logger, config, command, message, connection)
+    elif command == "QUIT":
+        SMTP_QUIT(logger, config, command, message, connection)
+    else:
+        logger.info(f"Invalid command: {command}")
+
+
+def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
+    logger.info(command + message)
+    send_message = tuple("250 OK", "Hello "+ message + "\r\n")
+    pickle_data = pickle.dumps(send_message)
+    logger.info(send_message[0] + send_message[1])
+    connection.sendall(pickle_data)
+
+
+def SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+    logger.info(command + message)
+    send_message = tuple("250", " " + message + "... Sender ok" + "\r\n")
+    pickle_data = pickle.dumps(send_message)
+    logger.info(send_message[0] + send_message[1])
+    connection.sendall(pickle_data)
+
+def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+    logger.info(command + message)
+    send_message = tuple("250", " " + " root... Recipient ok" + "\r\n")
+    pickle_data = pickle.dumps(send_message)
+    logger.info(send_message[0] + send_message[1])
+    connection.sendall(pickle_data)
+
+
+def SMTP_DATA(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+    logger.info(command)
+    logger.info("354 Enter Mail, end with '.' on a line by itself")
+    write_to_mailbox(logger, config, message, mailbox_semaphore)
+    send_message = tuple("250", " OK message accepted for delivery"  + "\r\n")
+    pickle_data = pickle.dumps(send_message)
+    logger.info(send_message[0] + send_message[1])
+    connection.sendall(pickle_data)
+    
+
+def SMTP_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+    logger.info(command)
+    send_message = tuple("221", message + " Closing Connection" + "\r\n")
+    pickle_data = pickle.dumps(send_message)
+    logger.info(send_message[0] + send_message[1])
+    connection.sendall(pickle_data)
+    connection.close()
+
+
+def write_to_mailbox(logger: BoundLogger, config: ConfigWrapper, message: MessageWrapper, file_semaphore: threading.Semaphore) -> None:
+    username = message.getToUsername()
+
+    file_semaphore.acquire()
+    with open(os.path.join(username, 'my_mailbox.txt'), 'a') as file:
+        file.write(str(message) + '\n')
+        file.flush()
+
+    file_semaphore.release()
+   
 
 if __name__ == "__main__":
     main()
