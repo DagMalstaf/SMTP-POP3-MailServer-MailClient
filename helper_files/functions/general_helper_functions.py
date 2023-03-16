@@ -54,6 +54,8 @@ def retrieve_command_promt_input(message_to_display:str, cast_to_int: bool = Fal
         if cast_to_int:
             command_prompt_input = int(command_prompt_input)
         if hash_input:
+            if command_prompt_input == "quit":
+                return "quit"
             command_prompt_input = hash_string(command_prompt_input)
         return command_prompt_input
     except Exception as e:
@@ -102,11 +104,11 @@ Example Usage:
 server_ip, SMTP_server_port, POP3_server_port, username, password = get_parameters_mail_client()
 
 """
-def get_parameters_mail_client() -> tuple[str | int, str | int, str | int, str | int, str]:
+def get_parameters_mail_client() -> tuple[str | int, str | int, str | int, str | int]:
     server_ip = retrieve_command_promt_input("Give IP address to connect to: ")
     SMTP_server_port = retrieve_command_promt_input("Give SMTP server port", cast_to_int=True, port=True)
     POP3_server_port = retrieve_command_promt_input("Give pop3 server port", cast_to_int=True, port=True)
     username = retrieve_command_promt_input("Provide username of mail account: ")
-    password = retrieve_command_promt_input(" Provide password of mail account: ", hash_input=True)
-    return server_ip, SMTP_server_port, POP3_server_port, username, password
+    
+    return server_ip, SMTP_server_port, POP3_server_port, username
 

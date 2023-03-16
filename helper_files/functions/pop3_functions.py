@@ -1,8 +1,27 @@
+import socket
+import pickle
+from typing import List
+from structlog import BoundLogger
+
+from helper_files.ConfigWrapper import ConfigWrapper
+from helper_files.MessageWrapper import MessageWrapper
 
 
+def pop3_USER(logger: BoundLogger, config: ConfigWrapper, pop3_socket, username) -> bool:
+    send_message = tuple("USER", " " + username)
+    pickle_data = pickle.dumps(send_message)
+    pop3_socket.sendall(pickle_data)
 
-def pop3_USER() -> None:
-    pass
+    response_message = pop3_socket.recv(config.get_max_size_package_tcp())
+    tuple_data = pickle.loads(response_message)
+    response_code = tuple_data[0]
+    if response_code == "-ERR":
+        logger.error(response_code + " " + tuple_data[1])
+        return False
+    else:
+        logger.info(response_code + " " + tuple_data[1])
+        return True
+    
 
 def pop3_PASS() -> None:
     pass
