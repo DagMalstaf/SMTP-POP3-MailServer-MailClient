@@ -42,6 +42,7 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
         try:
             while True:
                 conn, addr = pop3_socket.accept()
+                conn.send("+OK POP3 server ready")
                 logger.info(f"{addr} Service Ready")
                 data = conn.recv(config.get_max_size_package_tcp())
                 tuple_data = pickle.loads(data)
