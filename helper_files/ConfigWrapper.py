@@ -5,19 +5,11 @@ import yaml
 from yaml.loader import SafeLoader
 
 from custom_exceptions.ConfigReadError import ConfigReadError
-from helper_files.Action import Action
-from helper_files.Exit import Exit
-from helper_files.MailManagement import MailManagement
-from helper_files.MailSending import MailSending
-from helper_files.pop3_functions import pop3_count, pop3_retrieve, pop3_list, pop3_delete, pop3_quit
+from helper_files.functions.pop3_functions import pop3_count, pop3_retrieve, pop3_list, pop3_delete, pop3_quit
 
-CLIENT_MAIL_ACTIONS: Dict[str, Action] ={
-    "Mail Sending": MailSending ,
-    "Mail Management": MailManagement,
-    "Exit": Exit
-}
+
 MAIL_MANAGEMENT_ACTIONS: Dict[str, Callable[...,None]] = {
-    "Count" : pop3_count,
+    "Count": pop3_count,
     "List": pop3_list,
     "Retrieve": pop3_retrieve,
     "Delete": pop3_delete,
@@ -60,10 +52,6 @@ class ConfigWrapper:
         return self._loaded_config_dictionary["actions_for_mail_management"]
 
     @staticmethod
-    def get_mail_client_actions_as_list_of_classes() -> List[Action]:
-        return list(CLIENT_MAIL_ACTIONS.values())
-
-    @staticmethod
     def get_mail_management_actions_as_list_of_functions() -> List[Callable[...,None]]:
         # Calllable[argument types, return type] ... means any type is good (doesn't really matter to define here)
         return list(MAIL_MANAGEMENT_ACTIONS.values())
@@ -74,15 +62,7 @@ class ConfigWrapper:
     def get_mail_management_actions_as_string(self) -> str:
         return ', '.join(self.get_mail_management_actions_as_list_of_strings())
 
-    def get_mail_client_action_as_class(self, action: str) -> Action:
-        try:
-            return CLIENT_MAIL_ACTIONS.get(action)
-        except KeyError as e:
-            self._logger.info(f"Invalid action given for mail client: {action}\n"
-                              f"Possible actions are: [{self.get_mail_client_actions_as_string()}]")
-            raise e
-
-    def get_mail_management_action_as_fuction(self, action: str) -> Action:
+    def get_mail_management_action_as_fuction(self, action: str) -> (...):
         try:
             return MAIL_MANAGEMENT_ACTIONS.get(action)
         except KeyError as e:

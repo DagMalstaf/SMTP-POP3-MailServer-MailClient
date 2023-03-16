@@ -134,7 +134,7 @@ To send an email message using the DATA command, call the function like this: sm
 
 """
 def smtp_data(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, data: MessageWrapper) -> None:
-    send_message = tuple("DATA", data)
+    send_message: tuple = "DATA", data
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
 

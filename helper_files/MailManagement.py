@@ -1,14 +1,14 @@
-import socket
-from typing import List
 from structlog import BoundLogger
 from typing import TYPE_CHECKING
+import socket
+
 
 from custom_exceptions.RestartMailServerError import RestartMailServerError
 from helper_files.Action import Action
-from helper_files.helper_functions import retrieve_command_promt_input
-from helper_files.pop3_functions import pop3_authentication, pop3_list
-from helper_files.pop3_functions import pop3_stat, pop3_list, pop3_retrieve, pop3_delete, pop3_count
+from typing import TYPE_CHECKING
 
+from helper_files.functions.general_helper_functions import retrieve_command_promt_input
+from helper_files.functions.pop3_functions import pop3_authentication, pop3_list
 if TYPE_CHECKING:
     from helper_files.ConfigWrapper import ConfigWrapper
 
@@ -25,6 +25,7 @@ class MailManagement(Action):
             "password": self._password
         }
     
+
     def action(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as pop3_socket:
             pop3_socket.bind((self._config.get_host(), self._POP3_port))

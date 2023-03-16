@@ -1,6 +1,6 @@
 from typing import Union
-
 import hashlib
+
 
 """
 Function: hash_string(password: str) -> str
@@ -91,3 +91,4 @@ def get_parameters_mail_client() -> tuple[str | int, str | int, str | int, str |
     username = retrieve_command_promt_input("Provide username of mail account: ")
     password = retrieve_command_promt_input(" Provide password of mail account: ", hash_input=True)
     return server_ip, SMTP_server_port, POP3_server_port, username, password
+

@@ -3,7 +3,8 @@ from multiprocessing import get_logger
 
 from custom_exceptions.RestartMailServerError import RestartMailServerError
 from helper_files.ConfigWrapper import ConfigWrapper
-from helper_files.helper_functions import get_parameters_mail_client, retrieve_command_promt_input
+from helper_files.functions.general_helper_functions import get_parameters_mail_client, retrieve_command_promt_input
+from helper_files.functions.mail_functions import get_action
 
 """
 Function: main(logger: BoundLogger, config: ConfigWrapper)
@@ -34,7 +35,7 @@ def main(logger: BoundLogger, config: ConfigWrapper ):
     while True:
         try:
             action = retrieve_command_promt_input(f"Please select action [{config.get_mail_client_actions_as_string()}]: ")
-            wrapper_class_mail_action = config.get_mail_client_action_as_class(action)(logger, config,ip_address,SMTP_port, POP3_port, username, password)
+            wrapper_class_mail_action = get_action(logger,action)(logger, config,ip_address,SMTP_port, POP3_port, username, password)
             logger.info(f"succesfully starting {wrapper_class_mail_action} action")
             wrapper_class_mail_action.action()
         except Exception as e:

@@ -7,7 +7,7 @@ from helper_files.ConfigWrapper import ConfigWrapper
 
 
 class MessageWrapper():
-    def __init__(self, logger: BoundLogger, config: ConfigWrapper ,message: str) -> str:
+    def __init__(self, logger: BoundLogger, config: ConfigWrapper ,message: str) -> None:
         self._message = message
         self._config = config
         self._logger = logger
@@ -16,16 +16,16 @@ class MessageWrapper():
         return self._message
     
     def __getFromIndex(self) -> int:
-        return self._message.find(self.getFrom()) + len(self._config.getFrom())
+        return self._message.find(self.getFrom()) + len(self._config.getFromConfig())
     
     def __getToIndex(self) -> int:
-        return self._message.find(self.getTo()) + len(self._config.getTo())
+        return self._message.find(self.getTo()) + len(self._config.getToConfig())
     
     def __getSubjectIndex(self) -> int:
-        return self._message.find(self.getSubject()) + len(self._config.getSubject())
+        return self._message.find(self.getSubject()) + len(self._config.getSubjectConfig())
     
     def __getReceivedIndex(self) -> int:
-        return self._message.find(self.getReceived()) + len(self._config.getReceived())
+        return self._message.find(self.getReceived()) + len(self._config.getRecievedConfig())
       
     def getFrom(self) -> str:
         return self._message[self.__getFromIndex:self.__getToIndex]
@@ -56,6 +56,6 @@ class MessageWrapper():
     
     def verify_format(self) -> bool:
         pattern = r'^From: \S+@\S+\nTo: \S+@\S+\nSubject: .{1,150}\n(.+\n)*\.$'
-        return bool(regex.match(pattern, self.message))
+        return bool(regex.match(pattern, self._message))
 
  
