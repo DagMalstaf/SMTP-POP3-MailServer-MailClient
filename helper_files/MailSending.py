@@ -1,15 +1,17 @@
 import socket
 from typing import List
-
+from typing import TYPE_CHECKING
 from structlog import BoundLogger
 
 from helper_files.Action import Action
 from helper_files.MessageWrapper import MessageWrapper
 from helper_files.smtp3_functions import smtp_helo, smtp_mail_from, smtp_rcpt_to, smtp_data, smtp_quit
-from typing import TYPE_CHECKING
+
+
 if TYPE_CHECKING:
     from helper_files.ConfigWrapper import ConfigWrapper
-# SMTP
+
+
 class MailSending(Action):
 
     def __init__(self, logger: BoundLogger, config: "ConfigWrapper",ip_address,SMTP_port, POP3_port, username, password):
@@ -33,7 +35,7 @@ class MailSending(Action):
     None
     """
     def action(self):
-        print("Enter mail, end with '.' on a single line by itself")
+        self._logger.info("Enter mail, end with '.' on a single line by itself")
         correct_format = False
         while not correct_format:
             input_list: List[str] = list()
@@ -49,11 +51,11 @@ class MailSending(Action):
                     conn, addr = smtp_socket.accept()
                     with conn:
                         self._logger.info(f"{addr} Service Ready")
-                        smtp_helo(conn, self._config.get_host(), self._config, self._logger)
-                        smtp_mail_from(self._logger, self._config, conn, message.getFrom())
+                        smtp_helo(self._logger, self._config, conn, self._config.get_host)
+                        smtp_mail_from(self._logger, self._config, conn, message.getFrom)
                         smtp_rcpt_to(self._logger, self._config, conn,message.getTo())
                         smtp_data(self._logger, self._config, conn, message)
-                        smtp_quit(receiver = message.getTo())
+                        smtp_quit(self._logger, self._config, conn, self._config.get_host)
                         self._logger.info("Mail sent successfully")
                 correct_format = True
             else:

@@ -1,5 +1,5 @@
 from structlog import BoundLogger
-import socket
+from typing import TYPE_CHECKING
 
 from custom_exceptions.RestartMailServerError import RestartMailServerError
 from helper_files.Action import Action
@@ -22,6 +22,7 @@ class MailManagement(Action):
             "username": self._username,
             "password": self._password
         }
+    
 
     def action(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as pop3_socket:
