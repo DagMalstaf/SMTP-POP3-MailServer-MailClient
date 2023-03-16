@@ -109,9 +109,9 @@ def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, 
 def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket) -> None:
     if command == "HELO":
         SMTP_HELO(logger, config, command,  message, connection, executor)
-    elif command == "MAIL_FROM":
+    elif command == "MAIL FROM:":
         SMTP_MAIL_FROM(logger, config, command, message, connection)
-    elif command == "RCPT_TO":
+    elif command == "RCPT TO:":
         SMTP_RCPT_TO(logger, config, command, message, connection)
     elif command == "DATA":
         SMTP_DATA(logger, config, command, message, connection)
@@ -122,7 +122,7 @@ def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, me
 
 
 def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
-    logger.info(command + " " + message)
+    logger.info(command + message)
     send_message = tuple("250 OK", "Hello "+ message + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
@@ -130,7 +130,7 @@ def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message:
 
 
 def SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command + ": " + message)
+    logger.info(command + message)
     send_message = tuple("250", " " + message + "... Sender ok" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
@@ -138,7 +138,7 @@ def SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, mes
 
 
 def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command + ": " + message)
+    logger.info(command + message)
     send_message = tuple("250", " " + " root... Recipient ok" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
