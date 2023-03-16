@@ -6,7 +6,7 @@ from structlog import BoundLogger
 from helper_files.MessageWrapper import MessageWrapper
 
     
-def smtp_helo(smtp_socket: socket, server_domain_name: str, config: ConfigWrapper, logger: BoundLogger) -> None:
+def smtp_helo(logger : BoundLogger, config: ConfigWrapper, smtp_socket: socket, server_domain_name: str) -> None:
     send_message = tuple("HELO", server_domain_name)
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
@@ -36,7 +36,7 @@ def smtp_mail_from(logger: BoundLogger, config: ConfigWrapper, smtp_socket: sock
 
 
 
-def smtp_rcpt_to( logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, to_address: str) -> None:
+def smtp_rcpt_to(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, to_address: str) -> None:
     send_message = tuple("RCPT_TO", to_address)
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
@@ -67,10 +67,17 @@ def smtp_data(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, d
 
 
 
-def smtp_quit(**kwargs):
-    receiver = kwargs.get("receiver")
-    # TODO: see image with typical sequence to implement functionality
-    # TODO: not entirely sure that the argument receiver is necessary tbh
-    pass
+def smtp_quit(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, server_domain_name: str) -> None:
+    send_message = tuple("QUIT", server_domain_name)
+    pickle_data = pickle.dumps(send_message)
+    smtp_socket.sendall(pickle_data)
+
+    response_message = smtp_socket.recv(config.get_max_size_package_tcp())
+    tuple_data = pickle.loads(response_message)
+    command = tuple_data[0]
+    if command == "221":
+        logger.info("Closed the connection to the SMTP server")
+    else:
+        logger.error("There was an error closing the SMTP server connection")
 
 
