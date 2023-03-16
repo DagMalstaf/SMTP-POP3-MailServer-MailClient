@@ -39,23 +39,22 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, pop3_socket, password)
         return True
     
 
-def pop3_QUIT() -> None:
+def pop3_QUIT(**kwargs) -> None:
     pass
 
-def pop3_STAT() -> None:
+def pop3_STAT(**kwargs) -> None:
     pass
 
-def pop3_LIST() -> None:
+def pop3_LIST(**kwargs) -> None:
     pass
 
-def pop3_RETR() -> None:
+def pop3_RETR(**kwargs) -> None:
     pass
 
-def pop3_DELE() -> None:
+def pop3_DELE(**kwargs) -> None:
     pass
 
-def pop3_count() -> None:
-    pass
+
 
 
 
