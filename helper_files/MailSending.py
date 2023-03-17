@@ -49,7 +49,7 @@ class MailSending(Action):
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
                     smtp_socket.bind((self._config.get_host(), self._SMTP_port))
                     smtp_socket.listen()
-                    self._logger.info(f"Waiting for connection on port:  {self._SMTP_port}")
+                    self._logger.info(f"Waiting for connection on port:  {smtp_socket}")
                     conn, addr = smtp_socket.accept()
                     with conn:
                         self._logger.info(f"{addr} Service Ready")

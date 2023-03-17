@@ -37,7 +37,7 @@ def main(logger: BoundLogger, config: ConfigWrapper ):
         try:
             action = retrieve_command_promt_input(f"Please select action [{config.get_mail_client_actions_as_string()}]: ", logger)
             wrapper_class_mail_action = get_action(logger,action)(logger, config,ip_address,SMTP_port, POP3_port, username)
-            logger.info(f"succesfully starting {action} action")
+            logger.info(f"Succesfully starting {action} action")
             wrapper_class_mail_action.action()
         except Exception as e:
             print(f"Error: {e}")
