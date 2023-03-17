@@ -28,7 +28,7 @@ To initiate an SMTP connection using the HELO command, call the function like th
 
 """
 def smtp_helo(logger : BoundLogger, config: ConfigWrapper, smtp_socket: socket, host_domain_name: str) -> None:
-    send_message = tuple("HELO", " " + f"{host_domain_name}\r\n")
+    send_message = ("HELO", " " + f"{host_domain_name}\r\n")
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
 
@@ -62,7 +62,7 @@ To set the sender address of an email message using the MAIL FROM command, call 
 
 """
 def smtp_mail_from(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, from_address: str) -> None:
-    send_message = tuple("MAIL FROM:", f"<{from_address}>\r\n")
+    send_message = ("MAIL FROM:", f"<{from_address}>\r\n")
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
 
@@ -98,7 +98,7 @@ To set the recipient address of an email message using the RCPT TO command, call
 
 """
 def smtp_rcpt_to(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, to_address: str) -> None:
-    send_message = tuple("RCPT TO:", f"<{to_address}>\r\n")
+    send_message = ("RCPT TO:", f"<{to_address}>\r\n")
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
 
@@ -169,7 +169,7 @@ To terminate the SMTP session by sending the QUIT command to the SMTP server, ca
 
 """
 def smtp_quit(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, host_domain_name: str) -> None:
-    send_message = tuple("QUIT", f"{host_domain_name}\r\n")
+    send_message = ("QUIT", f"{host_domain_name}\r\n")
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
 

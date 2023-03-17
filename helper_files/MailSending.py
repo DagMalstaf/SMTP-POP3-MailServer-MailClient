@@ -47,18 +47,20 @@ class MailSending(Action):
             message = MessageWrapper(self._logger,self._config, input_message)
             if message.verify_format():
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
-                    smtp_socket.bind((self._config.get_host(), self._SMTP_port))
-                    smtp_socket.listen()
-                    self._logger.info(f"Waiting for connection on port:  {smtp_socket}")
-                    conn, addr = smtp_socket.accept()
-                    with conn:
-                        self._logger.info(f"{addr} Service Ready")
-                        smtp_helo(self._logger, self._config, conn, self._config.get_host)
-                        smtp_mail_from(self._logger, self._config, conn, message.getFrom)
-                        smtp_rcpt_to(self._logger, self._config, conn,message.getTo())
-                        smtp_data(self._logger, self._config, conn, message)
-                        smtp_quit(self._logger, self._config, conn, self._config.get_host)
+                    try:
+                        smtp_socket.connect((self._ip_address, self._SMTP_port))
+                        self._logger.info(f"Connected to SMTP server at port {self._SMTP_port}")
+
+                        smtp_helo(self._logger, self._config, smtp_socket, self._config.get_host)
+                        smtp_mail_from(self._logger, self._config, smtp_socket, message.getFrom)
+                        smtp_rcpt_to(self._logger, self._config, smtp_socket,message.getTo())
+                        smtp_data(self._logger, self._config, smtp_socket, message)
+                        smtp_quit(self._logger, self._config, smtp_socket, self._config.get_host)
                         self._logger.info("Mail sent successfully")
+
+                    except Exception as e:
+                        self._logger.error(f"Error: {e}")
+                        raise e
                 correct_format = True
             else:
                 self._logger.error(f"This is an incorect format")

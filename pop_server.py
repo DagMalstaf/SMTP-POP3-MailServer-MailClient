@@ -42,8 +42,8 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
         pop3_socket.bind((config.get_host(), port))
         pop3_socket.listen()
         try:
+            conn, addr = pop3_socket.accept()
             while True:
-                conn, addr = pop3_socket.accept()
                 conn.send("+OK POP3 server ready")
                 logger.info(f"{addr} Service Ready")
                 server_state = "AUTHORIZATION"
@@ -141,7 +141,7 @@ def pop3_USER(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             usernames.add(username)
     try:
         if message in usernames:
-            send_message = tuple("+OK", " User accepted")
+            send_message = ("+OK", " User accepted")
             session_username = message
             logger.info(f"Session username: {session_username}")
             pickle_data = pickle.dumps(send_message)
@@ -149,14 +149,14 @@ def pop3_USER(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             connection.sendall(pickle_data)
             return True
         else:
-            send_message = tuple("-ERR", " [AUTH] Invalid username")
+            send_message = ("-ERR", " [AUTH] Invalid username")
             pickle_data = pickle.dumps(send_message)
             logger.info(send_message[0] + send_message[1])
             connection.sendall(pickle_data)
             return False
     except Exception as e:        
         logger.exception(f"An error occurred: {e}")
-        send_message = tuple("-ERR", " [AUTH] Authentication failed due to server error")
+        send_message = ("-ERR", " [AUTH] Authentication failed due to server error")
         pickle_data = pickle.dumps(send_message)
         logger.info(send_message[0] + send_message[1])
         connection.sendall(pickle_data)
@@ -172,20 +172,20 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             passwords.add(password)
     try:
         if message in passwords:
-            send_message = tuple("+OK", " Password accepted")
+            send_message = ("+OK", " Password accepted")
             pickle_data = pickle.dumps(send_message)
             logger.info(send_message[0] + send_message[1])
             server_state = "TRANSACTION"
             logger.info(f"Server is now in the {server_state} STATE")
             connection.sendall(pickle_data)
         else:
-            send_message = tuple("-ERR", " [AUTH] Invalid password")
+            send_message = ("-ERR", " [AUTH] Invalid password")
             pickle_data = pickle.dumps(send_message)
             logger.info(send_message[0] + send_message[1])
             connection.sendall(pickle_data)
     except Exception as e:        
         logger.exception(f"An error occurred: {e}")
-        send_message = tuple("-ERR", " [AUTH] Authentication failed due to server error")
+        send_message = ("-ERR", " [AUTH] Authentication failed due to server error")
         pickle_data = pickle.dumps(send_message)
         logger.info(send_message[0] + send_message[1])
         connection.sendall(pickle_data)
@@ -196,7 +196,7 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         logger.info(command + message)
         logger.info("Client terminated the connection in the AUTHORIZATION STATE")
         logger.info("Server is now terminating the connection")
-        send_message = tuple("+OK", " Thanks for using POP3 server")
+        send_message = ("+OK", " Thanks for using POP3 server")
         pickle_data = pickle.dumps(send_message)
         logger.info(send_message[0] + send_message[1])
         connection.sendall(pickle_data)
@@ -209,7 +209,7 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         logger.info(command + message)
         server_state = "UPDATE"
         logger.info(f"Server is now in the {server_state} STATE")
-        send_message = tuple("-ERR", " [AUTH] Authentication or connection failed due to server error")
+        send_message = ("-ERR", " [AUTH] Authentication or connection failed due to server error")
         pickle_data = pickle.dumps(send_message)
         logger.info(send_message[0] + send_message[1])
         logger.info("Server will now clean up all resources and close the connection")
@@ -258,7 +258,7 @@ def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         bytes = message.encode('utf-8')
         total_size_mailbox += len(bytes)
     if number_of_messages >= 0 and total_size_mailbox >= 0:
-        send_message = tuple("+OK", " " + str(number_of_messages) + " " + str(total_size_mailbox))
+        send_message = ("+OK", " " + str(number_of_messages) + " " + str(total_size_mailbox)+ "\r\n")
         pickle_data = pickle.dumps(send_message)
         logger.info(send_message[0] + send_message[1])
         connection.sendall(pickle_data)

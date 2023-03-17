@@ -105,8 +105,8 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
         smtp_socket.bind((config.get_host(), port))
         smtp_socket.listen()
         try:
+            conn, addr = smtp_socket.accept()
             while True:
-                conn, addr = smtp_socket.accept()
                 logger.info(f"{addr} Service Ready")
                 data = conn.recv(config.get_max_size_package_tcp())
                 tuple_data = pickle.loads(data)
@@ -315,7 +315,7 @@ SMTP_HELO(logger, config, command, message, connection, executor)
 def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket,
               executor: ThreadPoolExecutor) -> None:
     logger.info(command + message)
-    send_message = tuple("250 OK", "Hello " + message + "\r\n")
+    send_message = ("250 OK", "Hello " + message + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -352,7 +352,7 @@ SMTP_MAIL_FROM(logger, config, command, message, connection)
 
 def SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + message)
-    send_message = tuple("250", " " + message + "... Sender ok" + "\r\n")
+    send_message = ("250", " " + message + "... Sender ok" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -389,7 +389,7 @@ SMTP_RCPT_TO(logger, config, command, message, connection)
 
 def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + message)
-    send_message = tuple("250", " " + " root... Recipient ok" + "\r\n")
+    send_message = ("250", " " + " root... Recipient ok" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -429,7 +429,7 @@ def SMTP_DATA(logger: BoundLogger, config: ConfigWrapper, command: str, message:
     logger.info(command)
     logger.info("354 Enter Mail, end with '.' on a line by itself")
     write_to_mailbox(logger, config, message, mailbox_semaphore)
-    send_message = tuple("250", " OK message accepted for delivery" + "\r\n")
+    send_message = ("250", " OK message accepted for delivery" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -466,7 +466,7 @@ SMTP_QUIT(logger, config, command, message, connection)
 
 def SMTP_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command)
-    send_message = tuple("221", message + " Closing Connection" + "\r\n")
+    send_message = ("221", message + " Closing Connection" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)

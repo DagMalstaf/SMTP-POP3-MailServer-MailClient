@@ -38,7 +38,7 @@ def pop3_authentication(self, connection) -> bool:
 
 
 def pop3_USER(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket, username: str) -> bool:
-    send_message = tuple("USER ", username)
+    send_message = ("USER ", username)
     pickle_data = pickle.dumps(send_message)
     pop3_socket.sendall(pickle_data)
 
@@ -54,7 +54,7 @@ def pop3_USER(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket, u
     
 
 def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket, password: str) -> bool:
-    send_message = tuple("PASS ", password)
+    send_message = ("PASS ", password)
     pickle_data = pickle.dumps(send_message)
     pop3_socket.sendall(pickle_data)
 
@@ -70,7 +70,7 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket, p
     
 
 def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
-    send_message = tuple("QUIT", " Request to terminate the connection to the pop3 server")
+    send_message = ("QUIT", " Request to terminate the connection to the pop3 server")
     pickle_data = pickle.dumps(send_message)
     pop3_socket.sendall(pickle_data)
 
@@ -83,7 +83,7 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
         logger.error(f"Recieved response code: {response_code} from POP3 server")
 
 def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
-    send_message = tuple("STAT", " Request to retrieve information from the mailbox")
+    send_message = ("STAT", " Request to retrieve information from the mailbox")
     pickle_data = pickle.dumps(send_message)
     pop3_socket.sendall(pickle_data)
 
