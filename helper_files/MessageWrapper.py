@@ -16,11 +16,13 @@ class MessageWrapper():
         return self._message
     
     def __getFromIndex(self) -> int:
-        return self._message.find(self.getFrom()) + len(self._config.getFromConfig())
+        to_str = self.getTo()
+        return self._message.find(to_str) + len(to_str)
     
     def __getToIndex(self) -> int:
-        return self._message.find(self.getTo()) + len(self._config.getToConfig())
-    
+        from_str = self.getFrom()
+        return self._message.find(from_str, self.__getFromIndex()) + len(from_str)
+
     def __getSubjectIndex(self) -> int:
         return self._message.find(self.getSubject()) + len(self._config.getSubjectConfig())
     
@@ -28,16 +30,21 @@ class MessageWrapper():
         return self._message.find(self.getReceived()) + len(self._config.getRecievedConfig())
       
     def getFrom(self) -> str:
-        return self._message[self.__getFromIndex:self.__getToIndex]
+        return self._message[self.__getFromIndex():self.__getToIndex()]
     
     def getTo(self) -> str:
-        return self._message[self.__getToIndex:self.__getSubjectIndex]
+        from_str = self.getFrom()
+        return self._message[self._message.find(from_str) + len(from_str):self.__getSubjectIndex()]
+    """
+    def getTo(self) -> str:
+        return self._message[self.__getToIndex():self.__getSubjectIndex()]
+    """
     
     def getSubject(self) -> str:
         return self._message[self.__getSubjectIndex:self._config.getDateLen()]
     
     def getReceived(self) -> str:
-        return self._message[self.__getReceivedIndex:]
+        return self._message[self.__getReceivedIndex():]
     
     def getFromUsername(self) -> str:
         return self.getFrom().split("@")[0]

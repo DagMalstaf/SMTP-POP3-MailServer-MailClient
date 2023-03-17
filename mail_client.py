@@ -40,6 +40,7 @@ def main(logger: BoundLogger, config: ConfigWrapper ):
             logger.info(f"Succesfully starting {action} action")
             wrapper_class_mail_action.action()
         except Exception as e:
+            raise e
             print(f"Error: {e}")
 
 

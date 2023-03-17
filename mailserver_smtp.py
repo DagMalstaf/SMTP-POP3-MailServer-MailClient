@@ -72,131 +72,52 @@ def retrieve_port() -> int:
         return retrieve_port()
 
 
-"""
-Function: loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor: ThreadPoolExecutor) -> None
-
-Description:
-This function sets up a socket on the specified port and listens for incoming connections. 
-When a client connects, it receives the incoming data, unpacks it, and checks the command type. 
-If the command is "HELO", the function submits a new thread in the thread pool to handle the HELO request. 
-If the command is not "HELO", the function logs the error message "Invalid command: {command}".
-
-Parameters:
-- logger (BoundLogger): A logging object used to log events and errors.
-- config (ConfigWrapper): A configuration object used to retrieve the server's host name, maximum package size, and other settings.
-- port (int): The port number to listen on for incoming connections.
-- executor (ThreadPoolExecutor): A thread pool executor to manage multiple threads.
-
-Returns:
-None
-
-Example Usage:
-To start the server listening on port 12345, call the function like this:
-logger = get_logger()
-config = ConfigWrapper(logger, "general_config")
-executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
-loop_server(logger, config, 12345, executor)
-
-"""
-
-
 def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor: ThreadPoolExecutor) -> None:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
-        smtp_socket.bind((config.get_host(), port))
-        smtp_socket.listen()
-        try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
+            smtp_socket.bind((config.get_host(), port))
+            smtp_socket.listen()
+            logger.info(f"Listening on port {port}")
             while True:
-                conn, addr = smtp_socket.accept()
-                logger.info(f"{addr} Service Ready")
-                data = conn.recv(config.get_max_size_package_tcp())
-                tuple_data = pickle.loads(data)
-                command = tuple_data[0]
-                data = tuple_data[1]
-                if command == "HELO":
-                    executor.submit(handle_helo, logger, config, data, conn, executor)
-                else:
-                    logger.info(f"Invalid command: {command}")
+                try:
+                    conn, addr = smtp_socket.accept()
+                    logger.info(f"{addr} Client connected")
+                    thread = threading.Thread(target=handle_client, args=(logger, config, conn))
+                    thread.start()
 
-        except ConnectionResetError:
-            # client has closed the connection unexpectedly
-            logger.exception("Client closed the connection unexpectedly")
-        except socket.timeout:
-            # no data received within timeout period
-            logger.exception("No data received from client within timeout period")
-        except KeyboardInterrupt:
-            # user has interrupted the program execution
-            logger.info("Program interrupted by user")
-        except ValueError:
-            # data received cannot be converted to string
-            logger.exception("Received data cannot be converted to string")
-        except Exception as e:
-            # any other exception
-            logger.exception(f"An error occurred: {e}")
+                except ConnectionResetError:
+                    # client has closed the connection unexpectedly
+                    logger.exception("Client closed the connection unexpectedly")
+                except socket.timeout:
+                    # no data received within timeout period
+                    logger.exception("No data received from client within timeout period")
+                except KeyboardInterrupt:
+                    # user has interrupted the program execution
+                    logger.info("Program interrupted by user")
+                except ValueError:
+                    # data received cannot be converted to string
+                    logger.exception("Received data cannot be converted to string")
+                except Exception as e:
+                    # any other exception
+                    logger.exception(f"An error occurred: {e}")
+
+def handle_client(logger: BoundLogger, config: ConfigWrapper, conn: socket):
+    while True:
+        data = conn.recv(config.get_max_size_package_tcp())
+        if not data:
+            logger.error("Client disconnected unexpectedly")
+            break
+        logger.info(f"Received data from {conn.getpeername()}")
+        tuple_data = pickle.loads(data)
+        command = tuple_data[0]
+        data = tuple_data[1]
+        command_handler(logger, config, command, data, conn)
 
 
 """
-Function: handle_helo(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket, executor: ThreadPoolExecutor) -> None
-
-Description:
-This function handles the "HELO" command for the SMTP server. 
-It sends a greeting to the client and then submits a new thread in the thread pool to handle incoming email requests.
-
-Parameters:
-- logger (BoundLogger): A logging object used to log events and errors.
-- config (ConfigWrapper): A configuration object used to retrieve server settings.
-- message (str): The message associated with the "HELO" command (e.g. the client's domain name).
-- connection (socket): The client's connection to the server.
-- executor (ThreadPoolExecutor): A thread pool executor to manage multiple threads.
-
-Returns:
-None
-
-Example Usage:
-To handle the "HELO" command for the SMTP server, call the function like this:
-logger = get_logger()
-config = ConfigWrapper(logger, "general_config")
-connection, address = smtp_socket.accept()
-message = "example.com"
-executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
-handle_helo(logger, config, message, connection, executor)
-
-"""
-
-
 def handle_helo(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket,
                 executor: ThreadPoolExecutor) -> None:
     SMTP_HELO(logger, config, "HELO", message, connection, executor)
     executor.submit(service_mail_request, logger, config, message, executor, connection)
-
-
-"""
-Function: service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor, conn: socket) -> None
-
-Description:
-This function handles incoming email requests from clients. 
-It receives incoming data, unpacks it, and calls the appropriate function to handle the SMTP command. 
-It continues to handle incoming requests until the the connection is closed.
-
-Parameters:
-- logger (BoundLogger): A logging object used to log events and errors.
-- config (ConfigWrapper): A configuration object used to retrieve server settings.
-- data (str): The incoming data from the client.
-- executor (ThreadPoolExecutor): A thread pool executor to manage multiple threads.
-- conn (socket): The client's connection to the server.
-
-Returns:
-None
-
-Example Usage:
-To handle incoming email requests from clients, call the function like this:
-logger = get_logger()
-config = ConfigWrapper(logger, "general_config")
-conn, address = smtp_socket.accept()
-data = conn.recv(config.get_max_size_package_tcp())
-executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
-service_mail_request(logger, config, data, executor, conn)
-
-"""
 
 
 def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor,
@@ -231,6 +152,8 @@ def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, 
                 # any other exception
                 logger.exception(f"An error occurred: {e}")
                 break
+"""
+
 
 
 """
@@ -265,9 +188,10 @@ command_handler(logger, config, command, message, executor, connection)
 
 
 def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str,
-                    executor: ThreadPoolExecutor, connection: socket) -> None:
+                    connection: socket) -> None:
+    logger.info(f"Received command: {command}")
     if command == "HELO":
-        SMTP_HELO(logger, config, command, message, connection, executor)
+        SMTP_HELO(logger, config, command, message, connection)
     elif command == "MAIL FROM:":
         SMTP_MAIL_FROM(logger, config, command, message, connection)
     elif command == "RCPT TO:":
@@ -312,10 +236,9 @@ SMTP_HELO(logger, config, command, message, connection, executor)
 """
 
 
-def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket,
-              executor: ThreadPoolExecutor) -> None:
+def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + message)
-    send_message = tuple("250 OK", "Hello " + message + "\r\n")
+    send_message = ("250 OK", "Hello " + message + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -352,7 +275,7 @@ SMTP_MAIL_FROM(logger, config, command, message, connection)
 
 def SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + message)
-    send_message = tuple("250", " " + message + "... Sender ok" + "\r\n")
+    send_message = ("250", " " + message + "... Sender ok" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -389,7 +312,7 @@ SMTP_RCPT_TO(logger, config, command, message, connection)
 
 def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + message)
-    send_message = tuple("250", " " + " root... Recipient ok" + "\r\n")
+    send_message = ("250", " " + " root... Recipient ok" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -429,7 +352,7 @@ def SMTP_DATA(logger: BoundLogger, config: ConfigWrapper, command: str, message:
     logger.info(command)
     logger.info("354 Enter Mail, end with '.' on a line by itself")
     write_to_mailbox(logger, config, message, mailbox_semaphore)
-    send_message = tuple("250", " OK message accepted for delivery" + "\r\n")
+    send_message = ("250", " OK message accepted for delivery" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -466,7 +389,7 @@ SMTP_QUIT(logger, config, command, message, connection)
 
 def SMTP_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command)
-    send_message = tuple("221", message + " Closing Connection" + "\r\n")
+    send_message = ("221", message + " Closing Connection" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
@@ -503,7 +426,8 @@ write_to_mailbox(logger, config, message, file_semaphore)
 
 def write_to_mailbox(logger: BoundLogger, config: ConfigWrapper, message: MessageWrapper,
                      file_semaphore: threading.Semaphore) -> None:
-    username = message.getToUsername()
+    username = message.getTo()
+    logger.debug(f"this is the username: {username}")
 
     file_semaphore.acquire()
     mailbox_file = os.path.join("USERS", username, "my_mailbox.txt")
