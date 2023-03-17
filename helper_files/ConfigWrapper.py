@@ -5,17 +5,7 @@ import yaml
 from yaml.loader import SafeLoader
 
 from custom_exceptions.ConfigReadError import ConfigReadError
-from helper_files.functions.pop3_functions import  pop3_RETR, pop3_LIST, pop3_DELE, pop3_QUIT, pop3_STAT
 
-
-MAIL_MANAGEMENT_ACTIONS: Dict[str, Callable[...,None]] = {
-    "Stat": pop3_STAT,
-    "List": pop3_LIST,
-    "Retrieve": pop3_RETR,
-    "Delete": pop3_DELE,
-    "Quit": pop3_QUIT
-
-}
 
 class ConfigWrapper:
     def __init__(self,logger: BoundLogger , file_name: str):

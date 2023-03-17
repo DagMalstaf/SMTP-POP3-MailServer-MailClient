@@ -20,6 +20,7 @@ class MailManagement(Action):
         pass
 
     def action(self):
+        print("Starting Mail Management")
         self._logger.info(f"Starting Mail Management")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as pop3_socket:
             pop3_socket.bind((self._config.get_host(), self._POP3_port))

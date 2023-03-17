@@ -86,8 +86,6 @@ This function prompts the user to enter the required parameters for configuring 
 - SMTP server port 
 - POP3 server port
 - username
-- password. 
-The username and password are also hashed for security reasons.
 
 Parameters:
 None
@@ -98,10 +96,9 @@ A tuple of five elements. Including:
 - SMTP server port (an integer) 
 - POP3 server port (an integer)
 - username (a string or integer) 
-- password (a string ).
 
 Example Usage:
-server_ip, SMTP_server_port, POP3_server_port, username, password = get_parameters_mail_client()
+server_ip, SMTP_server_port, POP3_server_port, username = get_parameters_mail_client()
 
 """
 def get_parameters_mail_client() -> tuple[str | int, str | int, str | int, str | int]:

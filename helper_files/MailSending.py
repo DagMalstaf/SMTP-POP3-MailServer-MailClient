@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 
 class MailSending(Action):
 
-    def __init__(self, logger: BoundLogger, config: "ConfigWrapper",ip_address,SMTP_port, POP3_port, username, password):
-        super().__init__(logger, config, ip_address, SMTP_port, POP3_port, username, password)
+    def __init__(self, logger: BoundLogger, config: "ConfigWrapper",ip_address,SMTP_port, POP3_port, username):
+        super().__init__(logger, config, ip_address, SMTP_port, POP3_port, username)
         pass
 
 
@@ -39,7 +39,9 @@ class MailSending(Action):
         correct_format = False
         while not correct_format:
             input_list: List[str] = list()
-            while self._check_end_line(input_list[-1]):
+            input_list.append(input())
+            while not self._check_end_line(input_list[-1]):
+                self._logger.debug(input_list)
                 input_list.append(input())
             input_message = '\n'.join(input_list)
 
@@ -88,4 +90,5 @@ class MailSending(Action):
         return_boolean = False
         if last_line:
             return_boolean = ''.join(list(filter(lambda x: x != self._config.get_stopping_character(), last_line))).isspace()
+        self._logger.debug(not return_boolean)
         return not return_boolean
