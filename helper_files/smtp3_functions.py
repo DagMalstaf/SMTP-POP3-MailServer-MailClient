@@ -28,7 +28,7 @@ To initiate an SMTP connection using the HELO command, call the function like th
 
 """
 def smtp_helo(logger : BoundLogger, config: ConfigWrapper, smtp_socket: socket, host_domain_name: str) -> None:
-    logger.info(f"Sending HELO command to {smtp_socket}")
+    logger.info(f"Sending HELO command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
     send_message = ("HELO", " " + f"{host_domain_name}\r\n")
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
@@ -39,7 +39,7 @@ def smtp_helo(logger : BoundLogger, config: ConfigWrapper, smtp_socket: socket, 
     if command == "250 OK":
         logger.info("Success")
     else:
-        logger.error(f"There was an error sending the HELO command to {smtp_socket}")
+        logger.error(f"There was an error sending the HELO command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
 
 """
 Function: smtp_mail_from(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, from_address: str) -> None
@@ -63,7 +63,7 @@ To set the sender address of an email message using the MAIL FROM command, call 
 
 """
 def smtp_mail_from(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, from_address: str) -> None:
-    logger.info(f"Sending MAIL FROM command to {smtp_socket}")
+    logger.info(f"Sending MAIL FROM command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
     send_message = ("MAIL FROM:", f"<{from_address}>\r\n")
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
@@ -75,7 +75,7 @@ def smtp_mail_from(logger: BoundLogger, config: ConfigWrapper, smtp_socket: sock
     if command == "250":
         logger.info("Success")
     else:
-        logger.error(f"There was an error sending the MAIL FROM command to {smtp_socket}")
+        logger.error(f"There was an error sending the MAIL FROM command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
     
 
 """
@@ -100,7 +100,7 @@ To set the recipient address of an email message using the RCPT TO command, call
 
 """
 def smtp_rcpt_to(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, to_address: str) -> None:
-    logger.info(f"Sending RCPT TO command to {smtp_socket}")
+    logger.info(f"Sending RCPT TO command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
     send_message = ("RCPT TO:", f"<{to_address}>\r\n")
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
@@ -112,7 +112,7 @@ def smtp_rcpt_to(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket
     if command == "250":
         logger.info("Success")
     else:
-        logger.error(f"There was an error sending the RCPT TO command to {smtp_socket}")
+        logger.error(f"There was an error sending the RCPT TO command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
 
 """
 Function: smtp_data(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, data: MessageWrapper) -> None
@@ -137,7 +137,7 @@ To send an email message using the DATA command, call the function like this: sm
 
 """
 def smtp_data(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, data: MessageWrapper) -> None:
-    logger.info(f"Sending DATA command to {smtp_socket}")
+    logger.info(f"Sending DATA command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
     send_message: tuple = "DATA", data
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
@@ -149,7 +149,7 @@ def smtp_data(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, d
     if command == "250":
         logger.info("Mail sent successfully")
     else:
-       logger.error(f"There was an error sending the DATA command to {smtp_socket}")
+       logger.error(f"There was an error sending the DATA command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
 
 """
 Function: smtp_quit(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, host_domain_name: str) -> None
@@ -173,7 +173,7 @@ To terminate the SMTP session by sending the QUIT command to the SMTP server, ca
 
 """
 def smtp_quit(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, host_domain_name: str) -> None:
-    logger.info(f"Sending QUIT command to {smtp_socket}")
+    logger.info(f"Sending QUIT command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
     send_message = ("QUIT", f"{host_domain_name}\r\n")
     pickle_data = pickle.dumps(send_message)
     smtp_socket.sendall(pickle_data)
@@ -184,6 +184,6 @@ def smtp_quit(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, h
     if command == "221":
         logger.info("Closed the connection to the SMTP server")
     else:
-       logger.error(f"There was an error sending the QUIT command to {smtp_socket}")
+       logger.error(f"There was an error sending the QUIT command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
 
 
