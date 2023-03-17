@@ -29,12 +29,15 @@ Example Usage:
 To run the program, simply call the main() function.
 
 """
+
+
 def main() -> None:
     listening_port = retrieve_port()
     logger = get_logger()
-    config = ConfigWrapper(logger,"general_config")
+    config = ConfigWrapper(logger, "general_config")
     executor = ThreadPoolExecutor(max_workers=config.get_max_thread_load())
     loop_server(logger, config, listening_port, executor)
+
 
 """
 Function: retrieve_port() -> int
@@ -53,12 +56,14 @@ Example Usage:
 To obtain a valid port number from the user, call the function like this: retrieve_port()
 
 """
+
+
 def retrieve_port() -> int:
     try:
         my_port = int(input("Enter a port number (non-privileged ports are > 1023): "))
         if my_port > 1023:
             return my_port
-        
+
         else:
             print("Port number must be greater than 1023.")
             return retrieve_port()
@@ -93,6 +98,8 @@ executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
 loop_server(logger, config, 12345, executor)
 
 """
+
+
 def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor: ThreadPoolExecutor) -> None:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
         smtp_socket.bind((config.get_host(), port))
@@ -118,14 +125,15 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
             logger.exception("No data received from client within timeout period")
         except KeyboardInterrupt:
             # user has interrupted the program execution
-            logger.info("Program interrupted by user") 
+            logger.info("Program interrupted by user")
         except ValueError:
             # data received cannot be converted to string
             logger.exception("Received data cannot be converted to string")
         except Exception as e:
             # any other exception
             logger.exception(f"An error occurred: {e}")
-            
+
+
 """
 Function: handle_helo(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket, executor: ThreadPoolExecutor) -> None
 
@@ -153,9 +161,13 @@ executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
 handle_helo(logger, config, message, connection, executor)
 
 """
-def handle_helo(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
+
+
+def handle_helo(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket,
+                executor: ThreadPoolExecutor) -> None:
     SMTP_HELO(logger, config, "HELO", message, connection, executor)
     executor.submit(service_mail_request, logger, config, message, executor, connection)
+
 
 """
 Function: service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor, conn: socket) -> None
@@ -185,7 +197,10 @@ executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
 service_mail_request(logger, config, data, executor, conn)
 
 """
-def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor, conn: socket) -> None:
+
+
+def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor,
+                         conn: socket) -> None:
     with conn:
         while True:
             try:
@@ -217,6 +232,7 @@ def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, 
                 logger.exception(f"An error occurred: {e}")
                 break
 
+
 """
 Function: command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket) -> None
 
@@ -246,9 +262,12 @@ executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
 command_handler(logger, config, command, message, executor, connection)
 
 """
-def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket) -> None:
+
+
+def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str,
+                    executor: ThreadPoolExecutor, connection: socket) -> None:
     if command == "HELO":
-        SMTP_HELO(logger, config, command,  message, connection, executor)
+        SMTP_HELO(logger, config, command, message, connection, executor)
     elif command == "MAIL FROM:":
         SMTP_MAIL_FROM(logger, config, command, message, connection)
     elif command == "RCPT TO:":
@@ -259,6 +278,7 @@ def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, me
         SMTP_QUIT(logger, config, command, message, connection)
     else:
         logger.info(f"Invalid command: {command}")
+
 
 """
 Function: SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor) -> None
@@ -290,12 +310,16 @@ executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
 SMTP_HELO(logger, config, command, message, connection, executor)
 
 """
-def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
+
+
+def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket,
+              executor: ThreadPoolExecutor) -> None:
     logger.info(command + message)
-    send_message = tuple("250 OK", "Hello "+ message + "\r\n")
+    send_message = tuple("250 OK", "Hello " + message + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
+
 
 """
 Function: SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None
@@ -324,12 +348,15 @@ message = "johndoe@example.com"
 SMTP_MAIL_FROM(logger, config, command, message, connection)
 
 """
+
+
 def SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + message)
     send_message = tuple("250", " " + message + "... Sender ok" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
+
 
 """
 Function: SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None
@@ -358,12 +385,15 @@ message = "janedoe@example.com"
 SMTP_RCPT_TO(logger, config, command, message, connection)
 
 """
+
+
 def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + message)
     send_message = tuple("250", " " + " root... Recipient ok" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
+
 
 """
 Function: SMTP_DATA(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None
@@ -393,15 +423,18 @@ message = "Hello Jane, how are you?"
 SMTP_DATA(logger, config, command, message, connection)
 
 """
+
+
 def SMTP_DATA(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command)
     logger.info("354 Enter Mail, end with '.' on a line by itself")
     write_to_mailbox(logger, config, message, mailbox_semaphore)
-    send_message = tuple("250", " OK message accepted for delivery"  + "\r\n")
+    send_message = tuple("250", " OK message accepted for delivery" + "\r\n")
     pickle_data = pickle.dumps(send_message)
     logger.info(send_message[0] + send_message[1])
     connection.sendall(pickle_data)
-    
+
+
 """
 Function: SMTP_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None
 
@@ -429,6 +462,8 @@ message = "Goodbye!"
 SMTP_QUIT(logger, config, command, message, connection)
 
 """
+
+
 def SMTP_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command)
     send_message = tuple("221", message + " Closing Connection" + "\r\n")
@@ -464,18 +499,21 @@ file_semaphore = threading.Semaphore()
 write_to_mailbox(logger, config, message, file_semaphore)
 
 """
-def write_to_mailbox(logger: BoundLogger, config: ConfigWrapper, message: MessageWrapper, file_semaphore: threading.Semaphore) -> None:
+
+
+def write_to_mailbox(logger: BoundLogger, config: ConfigWrapper, message: MessageWrapper,
+                     file_semaphore: threading.Semaphore) -> None:
     username = message.getToUsername()
 
     file_semaphore.acquire()
     mailbox_file = os.path.join("USERS", username, "my_mailbox.txt")
-    
+
     with open(mailbox_file, 'a') as file:
         file.write(str(message) + '\n')
         file.flush()
 
     file_semaphore.release()
-   
+
 
 if __name__ == "__main__":
     main()

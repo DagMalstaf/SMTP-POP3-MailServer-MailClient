@@ -97,12 +97,12 @@ def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
 
     
 
-def pop3_LIST(**kwargs) -> None:
+def pop3_LIST() -> None:
     pass
 
-def pop3_RETR(**kwargs) -> None:
+def pop3_RETR() -> None:
     pass
 
-def pop3_DELE(**kwargs) -> None:
+def pop3_DELE() -> None:
     pass
 
