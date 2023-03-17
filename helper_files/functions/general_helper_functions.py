@@ -1,6 +1,6 @@
 from typing import Union
 import hashlib
-
+from structlog import BoundLogger
 
 """
 Function: hash_string(password: str) -> str
@@ -45,10 +45,10 @@ To retrieve an integer input from the user, call the function like this: retriev
 To hash the input and retrieve the hashed value, call the function like this: retrieve_command_promt_input("Enter your password: ", hash_input=True)
 
 """
-def retrieve_command_promt_input(message_to_display:str, cast_to_int: bool = False, hash_input: bool = False, port: bool= False) -> Union[str,int]:
+def retrieve_command_promt_input(message_to_display:str, logger: BoundLogger, cast_to_int: bool = False, hash_input: bool = False, port: bool= False) -> Union[str,int]:
     try:
         if port:
-            command_prompt_input = retrieve_port(message_to_display)
+            command_prompt_input = retrieve_port(message_to_display, logger)
             return command_prompt_input
         command_prompt_input = input(message_to_display)
         if cast_to_int:
@@ -59,22 +59,21 @@ def retrieve_command_promt_input(message_to_display:str, cast_to_int: bool = Fal
             command_prompt_input = hash_string(command_prompt_input)
         return command_prompt_input
     except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}") 
 
 
-
-def retrieve_port(message_to_display:str) -> int:
+def retrieve_port(message_to_display:str, logger: BoundLogger) -> int:
     try:
         my_port = int(input(message_to_display + " (non-privileged ports are > 1023): "))
         if my_port > 1023:
             return my_port
         
         else:
-            print("Port number must be greater than 1023.")
-            return retrieve_port(message_to_display)
-    except ValueError:
-        print("Invalid input. Please enter a valid integer.")
-        return retrieve_port(message_to_display)
+            logger.error(f"Error: port number must be > 1023")
+            return retrieve_port(message_to_display, logger)
+    except ValueError as e:
+        logger.error(f"Error: {e}")
+        return retrieve_port(message_to_display, logger)
 
 
 """
@@ -86,8 +85,6 @@ This function prompts the user to enter the required parameters for configuring 
 - SMTP server port 
 - POP3 server port
 - username
-- password. 
-The username and password are also hashed for security reasons.
 
 Parameters:
 None
@@ -98,17 +95,16 @@ A tuple of five elements. Including:
 - SMTP server port (an integer) 
 - POP3 server port (an integer)
 - username (a string or integer) 
-- password (a string ).
 
 Example Usage:
-server_ip, SMTP_server_port, POP3_server_port, username, password = get_parameters_mail_client()
+server_ip, SMTP_server_port, POP3_server_port, username = get_parameters_mail_client()
 
 """
-def get_parameters_mail_client() -> tuple[str | int, str | int, str | int, str | int]:
-    server_ip = retrieve_command_promt_input("Give IP address to connect to: ")
-    SMTP_server_port = retrieve_command_promt_input("Give SMTP server port", cast_to_int=True, port=True)
-    POP3_server_port = retrieve_command_promt_input("Give pop3 server port", cast_to_int=True, port=True)
-    username = retrieve_command_promt_input("Provide username of mail account: ")
+def get_parameters_mail_client(logger: BoundLogger) -> tuple[str | int, str | int, str | int, str | int]:
+    server_ip = retrieve_command_promt_input("Give IP address to connect to: ", logger)
+    SMTP_server_port = retrieve_command_promt_input("Give SMTP server port",logger, cast_to_int=True, port=True)
+    POP3_server_port = retrieve_command_promt_input("Give pop3 server port",logger, cast_to_int=True, port=True)
+    username = retrieve_command_promt_input("Provide username of mail account: ", logger)
     
     return server_ip, SMTP_server_port, POP3_server_port, username
 

@@ -20,10 +20,10 @@ class MailManagement(Action):
         pass
 
     def action(self):
-        self._logger.info(f"Starting Mail Management")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as pop3_socket:
             pop3_socket.bind((self._config.get_host(), self._POP3_port))
             pop3_socket.listen()
+            self._logger.info(f"Waiting for connection on port:  {pop3_socket}")
             conn, addr = pop3_socket.accept()
             with conn:
                 if pop3_authentication(conn):

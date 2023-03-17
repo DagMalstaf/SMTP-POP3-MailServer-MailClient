@@ -1,4 +1,5 @@
 from structlog import BoundLogger
+import structlog
 from multiprocessing import get_logger
 
 from custom_exceptions.RestartMailServerError import RestartMailServerError
@@ -31,12 +32,12 @@ To start the mail client program, call the function like this: main(logger, conf
 
 """
 def main(logger: BoundLogger, config: ConfigWrapper ):
-    ip_address, SMTP_port, POP3_port, username = get_parameters_mail_client()
+    ip_address, SMTP_port, POP3_port, username = get_parameters_mail_client(logger)
     while True:
         try:
-            action = retrieve_command_promt_input(f"Please select action [{config.get_mail_client_actions_as_string()}]: ")
+            action = retrieve_command_promt_input(f"Please select action [{config.get_mail_client_actions_as_string()}]: ", logger)
             wrapper_class_mail_action = get_action(logger,action)(logger, config,ip_address,SMTP_port, POP3_port, username)
-            logger.info(f"succesfully starting {wrapper_class_mail_action} action")
+            logger.info(f"Succesfully starting {action} action")
             wrapper_class_mail_action.action()
         except Exception as e:
             print(f"Error: {e}")
@@ -44,7 +45,8 @@ def main(logger: BoundLogger, config: ConfigWrapper ):
 
 
 if __name__ == "__main__":
-    logger = get_logger()
+    logger = structlog.get_logger()
+    logger.info("Starting mail client")
     config = ConfigWrapper(logger,"general_config")
     try:
         main(logger,config)

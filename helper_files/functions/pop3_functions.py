@@ -5,7 +5,6 @@ from structlog import BoundLogger
 
 from helper_files.functions.general_helper_functions import retrieve_command_promt_input
 from helper_files.ConfigWrapper import ConfigWrapper
-from helper_files.MessageWrapper import MessageWrapper
 
 def pop3_authentication(self, connection) -> bool:
         try:
@@ -71,59 +70,39 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket, p
     
 
 def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
-    send_message = tuple("Quit ", " Request to terminate the connection to the pop3 server")
+    send_message = tuple("QUIT", " Request to terminate the connection to the pop3 server")
     pickle_data = pickle.dumps(send_message)
     pop3_socket.sendall(pickle_data)
 
     response_message = pop3_socket.recv(config.get_max_size_package_tcp())
     tuple_data = pickle.loads(response_message)
     response_code = tuple_data[0]
-    if response_code == "-ERR":
-        logger.error(response_code + tuple_data[1])
-    else:
+    if response_code == "+OK":
         logger.info(response_code + tuple_data[1])
+    else:
+        logger.error(f"Recieved response code: {response_code} from POP3 server")
 
 def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
+    send_message = tuple("STAT", " Request to retrieve information from the mailbox")
+    pickle_data = pickle.dumps(send_message)
+    pop3_socket.sendall(pickle_data)
+
+    response_message = pop3_socket.recv(config.get_max_size_package_tcp())
+    tuple_data = pickle.loads(response_message)
+    response_code = tuple_data[0]
+    if response_code == "+OK":
+        logger.info(response_code + tuple_data[1])
+    else:
+        logger.error(f"Recieved response code: {response_code} from POP3 server")
+
+    
+
+def pop3_LIST() -> None:
     pass
 
-def pop3_LIST(**kwargs) -> None:
+def pop3_RETR() -> None:
     pass
 
-def pop3_RETR(**kwargs) -> None:
+def pop3_DELE() -> None:
     pass
-
-def pop3_DELE(**kwargs) -> None:
-    pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# https://www.geeksforgeeks.org/args-kwargs-python/
-# see MailManagement
-def pop3_authentication(**kwargs) -> bool:
-    username = kwargs.get("username")
-    password = kwargs.get("password")
-    return True
-    #TODO: authentication is done on pop3 server
-    #TODO: sending username and hashed password to pop3 server
-    #TODO: return bool to signal successful authentication
-
-    #TODO: IMPORTANT: ask for information on mail management on the establishment of a connection to pop3 sever
-    #TODO: after authentication, but we have to send credentials to authenticate ?????
 
