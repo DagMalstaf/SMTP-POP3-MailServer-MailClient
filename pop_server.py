@@ -77,11 +77,11 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
 
 def handle_user(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket, executor: ThreadPoolExecutor, server_state: str, session_username: str) -> None:
     if pop3_USER(logger, config, "USER ", message, connection, executor, session_username):
-        executor.submit(service_mail_request, logger, config, message, executor, connection, server_state)
+        executor.submit(service_mail_request, logger, config, message, executor, connection, server_state, session_username)
 
 
 
-def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor, conn: socket, server_state: str) -> None:
+def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor, conn: socket, server_state: str, session_username: str) -> None:
     with conn:
         while True:
             try:
@@ -92,7 +92,7 @@ def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, 
                 tuple_data = pickle.loads(data)
                 command = tuple_data[0]
                 data = tuple_data[1]
-                command_handler(logger, config, command, data, executor, conn, server_state)
+                command_handler(logger, config, command, data, executor, conn, server_state, session_username)
 
             except ConnectionResetError:
                 # client has closed the connection unexpectedly
@@ -114,13 +114,13 @@ def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, 
                 break
 
 
-def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket, server_state: str) -> None:
+def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket, server_state: str, session_username: str) -> None:
     if command == "USER ":
-        pop3_USER(logger, config, command,  message, connection, executor)
+        pop3_USER(logger, config, command,  message, connection, executor, session_username)
     elif command == "PASS ":
         pop3_PASS(logger, config, command, message, connection, server_state)
     elif command == "QUIT":
-        pop3_QUIT(logger, config, command, message, connection, server_state)
+        pop3_QUIT(logger, config, command, message, connection, server_state, session_username)
     elif command == "STAT":
         pop3_STAT(logger, config, command, message, connection)
     elif command == "LIST":
@@ -193,7 +193,7 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, command: str, message:
 
 
 
-def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, server_state: str) -> None:
+def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, server_state: str, session_username: str) -> None:
     if server_state == "AUTHORIZATION":
         logger.info(command + message)
         logger.info("Client terminated the connection in the AUTHORIZATION STATE")
@@ -202,8 +202,11 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         pickle_data = pickle.dumps(send_message)
         logger.info(send_message[0] + send_message[1])
         connection.sendall(pickle_data)
-        connection.close()
-
+        try:
+            connection.close()
+        except Exception as e:
+            logger.exception(f"An error occurred while closing the connection: {e}")
+    
     elif server_state == "TRANSACTION":
         logger.info(command + message)
         server_state = "UPDATE"
@@ -215,86 +218,32 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message:
 
         mailbox_semaphore.acquire()
         try:
-            username = get_username_from_message(message)
-            mailbox_file = os.path.join(username, 'my_mailbox.txt')
-            
+            mailbox_file = os.path.join("USERS", session_username, "my_mailbox.txt")
             with open(mailbox_file, 'r') as f:
                 mailbox = f.readlines()
-            
             deleted_messages = []
             updated_mailbox = []
-            
-            for i, msg in enumerate(mailbox):
-                if msg.startswith('X'):
-                    deleted_messages.append(i)
+            for index, message in enumerate(mailbox):
+                if message.startswith('X'):
+                    deleted_messages.append(index)
                 else:
-                    updated_mailbox.append(msg)
-            
-            for i in reversed(deleted_messages):
-                del updated_mailbox[i]
+                    updated_mailbox.append(message)
+            for index in reversed(deleted_messages):
+                del updated_mailbox[index]
             
             with open(mailbox_file, 'w') as f:
                 f.writelines(updated_mailbox)
-        
         except Exception as e:
-            logger.exception(f"An error occurred: {e}")
-        
+            logger.exception(f"An error occurred while closing the connection: {e}")
         finally:
             mailbox_semaphore.release() 
-
-
-
-
-        connection.sendall(pickle_data)
-    """
-    def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command + message)
-    
-    # 1. Delete any messages marked for deletion
-    mailbox_semaphore.acquire()
-    try:
-        username = get_username_from_message(message)
-        mailbox_file = os.path.join(username, 'my_mailbox.txt')
-        
-        with open(mailbox_file, 'r') as f:
-            mailbox = f.readlines()
-        
-        deleted_messages = []
-        updated_mailbox = []
-        
-        for i, msg in enumerate(mailbox):
-            if msg.startswith('X'):
-                deleted_messages.append(i)
-            else:
-                updated_mailbox.append(msg)
-        
-        # Remove deleted messages from the mailbox
-        for i in reversed(deleted_messages):
-            del updated_mailbox[i]
-        
-        # Rewrite the mailbox file without deleted messages
-        with open(mailbox_file, 'w') as f:
-            f.writelines(updated_mailbox)
-    
-    except Exception as e:
-        logger.exception(f"An error occurred: {e}")
-    
-    finally:
-        mailbox_semaphore.release()
-    
-    # 2. Close any open files
-    try:
-        connection.close()
-    
-    except Exception as e:
-        logger.exception(f"An error occurred: {e}")
-    
-    send_message = tuple("+OK", " Thanks for using POP3 server")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
-
-    """
+            
+        try:
+            connection.close()
+        except Exception as e:
+            logger.exception(f"An error occurred: {e}")
+        finally:
+            connection.sendall(pickle_data)
     
 
 def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
