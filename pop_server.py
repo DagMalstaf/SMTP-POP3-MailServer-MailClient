@@ -3,7 +3,6 @@ import threading
 import pickle
 import os
 
-from helper_files.MessageWrapper import MessageWrapper
 from concurrent.futures import ThreadPoolExecutor
 from structlog import get_logger, BoundLogger
 from helper_files.ConfigWrapper import ConfigWrapper
@@ -122,7 +121,7 @@ def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, me
     elif command == "QUIT":
         pop3_QUIT(logger, config, command, message, connection, server_state, session_username)
     elif command == "STAT":
-        pop3_STAT(logger, config, command, message, connection)
+        pop3_STAT(logger, config, command, message, connection, session_username)
     elif command == "LIST":
         pop3_LIST(logger, config, command, message, connection)
     elif command == "RETR":
@@ -192,7 +191,6 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         connection.sendall(pickle_data)
 
 
-
 def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, server_state: str, session_username: str) -> None:
     if server_state == "AUTHORIZATION":
         logger.info(command + message)
@@ -221,9 +219,11 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             mailbox_file = os.path.join("USERS", session_username, "my_mailbox.txt")
             with open(mailbox_file, 'r') as f:
                 mailbox = f.readlines()
+            
+            formatted_mailbox = get_messages_list(mailbox)
             deleted_messages = []
             updated_mailbox = []
-            for index, message in enumerate(mailbox):
+            for index, message in enumerate(formatted_mailbox):
                 if message.startswith('X'):
                     deleted_messages.append(index)
                 else:
@@ -246,51 +246,46 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             connection.sendall(pickle_data)
     
 
-def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, session_username: str) -> None:
     logger.info(command + message)
-    send_message = tuple("250", " " + " root... Recipient ok" + "\r\n")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
-
+    mailbox_file = os.path.join("USERS", session_username, "my_mailbox.txt")
+    with open(mailbox_file, 'r') as f:
+        mailbox = f.readlines()
+    formatted_mailbox = get_messages_list(mailbox)
+    number_of_messages = len(formatted_mailbox)
+    total_size_mailbox = 0
+    for message in formatted_mailbox:
+        bytes = message.encode('utf-8')
+        total_size_mailbox += len(bytes)
+    if number_of_messages >= 0 and total_size_mailbox >= 0:
+        send_message = tuple("+OK", " " + str(number_of_messages) + " " + str(total_size_mailbox))
+        pickle_data = pickle.dumps(send_message)
+        logger.info(send_message[0] + send_message[1])
+        connection.sendall(pickle_data)
 
 def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command)
-    logger.info("354 Enter Mail, end with '.' on a line by itself")
-    write_to_mailbox(logger, config, message, mailbox_semaphore)
-    send_message = tuple("250", " OK message accepted for delivery"  + "\r\n")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
-    
+    pass
 
 def pop3_RETR(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command)
-    send_message = tuple("221", message + " Closing Connection" + "\r\n")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
-    
+    pass
 
 def pop3_DELE(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command)
-    send_message = tuple("221", message + " Closing Connection" + "\r\n")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
-    
+    pass
 
 
-def write_to_mailbox(logger: BoundLogger, config: ConfigWrapper, message: MessageWrapper, file_semaphore: threading.Semaphore) -> None:
-    username = message.getToUsername()
+def get_messages_list(mailbox: list[str]) -> list[str]:
+    messages = []
+    current_message = ""
+    for line in mailbox:
+        if line.strip() == "":
+            if current_message != "":
+                messages.append(current_message.strip())
+                current_message = ""
+        else:
+            current_message += line
+    if current_message != "":
+        messages.append(current_message.strip())
 
-    file_semaphore.acquire()
-    with open(os.path.join(username, 'my_mailbox.txt'), 'a') as file:
-        file.write(str(message) + '\n')
-        file.flush()
-
-    file_semaphore.release()
-   
 
 if __name__ == "__main__":
     main()
