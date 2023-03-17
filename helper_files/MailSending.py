@@ -35,13 +35,12 @@ class MailSending(Action):
     None
     """
     def action(self):
-        self._logger.info("Enter mail, end with '.' on a single line by itself")
+        self._logger.info("Enter mail format line per line, end with '.' on a single line by itself")
         correct_format = False
         while not correct_format:
-            input_list: List[str] = list()
+            input_list = list()
             input_list.append(input())
-            while not self._check_end_line(input_list[-1]):
-                self._logger.debug(input_list)
+            while self._check_end_line(input_list[-1]):
                 input_list.append(input())
             input_message = '\n'.join(input_list)
 
@@ -50,6 +49,7 @@ class MailSending(Action):
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
                     smtp_socket.bind((self._config.get_host(), self._SMTP_port))
                     smtp_socket.listen()
+                    self._logger.info(f"Waiting for connection on port:  {self._SMTP_port}")
                     conn, addr = smtp_socket.accept()
                     with conn:
                         self._logger.info(f"{addr} Service Ready")
@@ -62,7 +62,7 @@ class MailSending(Action):
                 correct_format = True
             else:
                 self._logger.error(f"This is an incorect format")
-                self._logger.info(f"Please enter the correct format: {self._config.get_message_format()}")
+                self._logger.info(f"Please enter the correct format:\n {self._config.get_message_format()}")
 
 
 
@@ -88,7 +88,11 @@ class MailSending(Action):
     """
     def _check_end_line(self,last_line: str) -> bool:  
         return_boolean = False
+        if last_line.strip() and all(c in (' ', '.') for c in last_line.strip()):
+            return_boolean = True
+            return not return_boolean
         if last_line:
             return_boolean = ''.join(list(filter(lambda x: x != self._config.get_stopping_character(), last_line))).isspace()
-        self._logger.debug(not return_boolean)
         return not return_boolean
+    
+   
