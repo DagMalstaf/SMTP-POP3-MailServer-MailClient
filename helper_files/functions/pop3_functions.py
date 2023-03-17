@@ -38,7 +38,7 @@ def pop3_authentication(self, connection) -> bool:
             return False
 
 
-def pop3_USER(logger: BoundLogger, config: ConfigWrapper, pop3_socket, username) -> bool:
+def pop3_USER(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket, username: str) -> bool:
     send_message = tuple("USER ", username)
     pickle_data = pickle.dumps(send_message)
     pop3_socket.sendall(pickle_data)
@@ -54,7 +54,7 @@ def pop3_USER(logger: BoundLogger, config: ConfigWrapper, pop3_socket, username)
         return True
     
 
-def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, pop3_socket, password) -> bool:
+def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket, password: str) -> bool:
     send_message = tuple("PASS ", password)
     pickle_data = pickle.dumps(send_message)
     pop3_socket.sendall(pickle_data)
@@ -70,10 +70,11 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, pop3_socket, password)
         return True
     
 
-def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, pop3_socket) -> None:
+def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
     send_message = tuple("Quit ", " Request to terminate the connection to the pop3 server")
     pickle_data = pickle.dumps(send_message)
     pop3_socket.sendall(pickle_data)
+
 
     response_message = pop3_socket.recv(config.get_max_size_package_tcp())
     tuple_data = pickle.loads(response_message)
@@ -86,7 +87,7 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, pop3_socket) -> None:
         return True
     pass
 
-def pop3_STAT(**kwargs) -> None:
+def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
     pass
 
 def pop3_LIST(**kwargs) -> None:
