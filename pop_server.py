@@ -12,12 +12,15 @@ from helper_files.ConfigWrapper import ConfigWrapper
 mailbox_semaphore = threading.Semaphore(1)
 
 
+
 def main() -> None:
     listening_port = retrieve_port()
     logger = get_logger()
     config = ConfigWrapper(logger,"general_config")
     executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
-    loop_server(logger, config, listening_port, executor)
+    server_state = "READY"
+    session_username = str()
+    loop_server(logger, config, listening_port, executor, server_state, session_username)
 
 
 def retrieve_port() -> int:
@@ -35,20 +38,23 @@ def retrieve_port() -> int:
 
 
 
-def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor: ThreadPoolExecutor) -> None:
+def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor: ThreadPoolExecutor, server_state: str, session_username:str) -> None:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as pop3_socket:
         pop3_socket.bind((config.get_host(), port))
         pop3_socket.listen()
         try:
             while True:
                 conn, addr = pop3_socket.accept()
+                conn.send("+OK POP3 server ready")
                 logger.info(f"{addr} Service Ready")
+                server_state = "AUTHORIZATION"
+                logger.info(f"Server is now in the {server_state} STATE")
                 data = conn.recv(config.get_max_size_package_tcp())
                 tuple_data = pickle.loads(data)
                 command = tuple_data[0]
                 data = tuple_data[1]
                 if command == "USER ":
-                    executor.submit(handle_user, logger, config, data, conn, executor)
+                    executor.submit(handle_user, logger, config, data, conn, executor, server_state, session_username)
                 else:
                     logger.info(f"Invalid command: {command}")
 
@@ -69,14 +75,13 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
             logger.exception(f"An error occurred: {e}")
             
 
-def handle_user(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
-    if pop3_USER(logger, config, "USER ", message, connection, executor):
-        executor.submit(service_mail_request, logger, config, message, executor, connection)
-
-            
+def handle_user(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket, executor: ThreadPoolExecutor, server_state: str, session_username: str) -> None:
+    if pop3_USER(logger, config, "USER ", message, connection, executor, session_username):
+        executor.submit(service_mail_request, logger, config, message, executor, connection, server_state, session_username)
 
 
-def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor, conn: socket) -> None:
+
+def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor, conn: socket, server_state: str, session_username: str) -> None:
     with conn:
         while True:
             try:
@@ -87,7 +92,7 @@ def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, 
                 tuple_data = pickle.loads(data)
                 command = tuple_data[0]
                 data = tuple_data[1]
-                command_handler(logger, config, command, data, executor, conn)
+                command_handler(logger, config, command, data, executor, conn, server_state, session_username)
 
             except ConnectionResetError:
                 # client has closed the connection unexpectedly
@@ -109,13 +114,13 @@ def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, 
                 break
 
 
-def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket) -> None:
+def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket, server_state: str, session_username: str) -> None:
     if command == "USER ":
-        pop3_USER(logger, config, command,  message, connection, executor)
+        pop3_USER(logger, config, command,  message, connection, executor, session_username)
     elif command == "PASS ":
-        pop3_PASS(logger, config, command, message, connection)
+        pop3_PASS(logger, config, command, message, connection, server_state)
     elif command == "QUIT":
-        pop3_QUIT(logger, config, command, message, connection)
+        pop3_QUIT(logger, config, command, message, connection, server_state, session_username)
     elif command == "STAT":
         pop3_STAT(logger, config, command, message, connection)
     elif command == "LIST":
@@ -128,7 +133,7 @@ def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, me
         logger.info(f"Invalid command: {command}")
 
 
-def pop3_USER(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
+def pop3_USER(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor, session_username:str) -> bool:
     logger.info(command + message)
     usernames = set()
     with open('userinfo.txt', 'r') as file:
@@ -138,23 +143,28 @@ def pop3_USER(logger: BoundLogger, config: ConfigWrapper, command: str, message:
     try:
         if message in usernames:
             send_message = tuple("+OK", " User accepted")
+            session_username = message
+            logger.info(f"Session username: {session_username}")
             pickle_data = pickle.dumps(send_message)
             logger.info(send_message[0] + send_message[1])
             connection.sendall(pickle_data)
+            return True
         else:
             send_message = tuple("-ERR", " [AUTH] Invalid username")
             pickle_data = pickle.dumps(send_message)
             logger.info(send_message[0] + send_message[1])
             connection.sendall(pickle_data)
+            return False
     except Exception as e:        
         logger.exception(f"An error occurred: {e}")
         send_message = tuple("-ERR", " [AUTH] Authentication failed due to server error")
         pickle_data = pickle.dumps(send_message)
         logger.info(send_message[0] + send_message[1])
         connection.sendall(pickle_data)
+        return False
 
 
-def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor) -> None:
+def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, executor: ThreadPoolExecutor, server_state: str) -> None:
     logger.info(command + message)
     passwords = set()
     with open('userinfo.txt', 'r') as file:
@@ -166,6 +176,8 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             send_message = tuple("+OK", " Password accepted")
             pickle_data = pickle.dumps(send_message)
             logger.info(send_message[0] + send_message[1])
+            server_state = "TRANSACTION"
+            logger.info(f"Server is now in the {server_state} STATE")
             connection.sendall(pickle_data)
         else:
             send_message = tuple("-ERR", " [AUTH] Invalid password")
@@ -181,12 +193,58 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, command: str, message:
 
 
 
-def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command + message)
-    send_message = tuple("250", " " + message + "... Sender ok" + "\r\n")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
+def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket, server_state: str, session_username: str) -> None:
+    if server_state == "AUTHORIZATION":
+        logger.info(command + message)
+        logger.info("Client terminated the connection in the AUTHORIZATION STATE")
+        logger.info("Server is now terminating the connection")
+        send_message = tuple("+OK", " Thanks for using POP3 server")
+        pickle_data = pickle.dumps(send_message)
+        logger.info(send_message[0] + send_message[1])
+        connection.sendall(pickle_data)
+        try:
+            connection.close()
+        except Exception as e:
+            logger.exception(f"An error occurred while closing the connection: {e}")
+    
+    elif server_state == "TRANSACTION":
+        logger.info(command + message)
+        server_state = "UPDATE"
+        logger.info(f"Server is now in the {server_state} STATE")
+        send_message = tuple("-ERR", " [AUTH] Authentication or connection failed due to server error")
+        pickle_data = pickle.dumps(send_message)
+        logger.info(send_message[0] + send_message[1])
+        logger.info("Server will now clean up all resources and close the connection")
+
+        mailbox_semaphore.acquire()
+        try:
+            mailbox_file = os.path.join("USERS", session_username, "my_mailbox.txt")
+            with open(mailbox_file, 'r') as f:
+                mailbox = f.readlines()
+            deleted_messages = []
+            updated_mailbox = []
+            for index, message in enumerate(mailbox):
+                if message.startswith('X'):
+                    deleted_messages.append(index)
+                else:
+                    updated_mailbox.append(message)
+            for index in reversed(deleted_messages):
+                del updated_mailbox[index]
+            
+            with open(mailbox_file, 'w') as f:
+                f.writelines(updated_mailbox)
+        except Exception as e:
+            logger.exception(f"An error occurred while closing the connection: {e}")
+        finally:
+            mailbox_semaphore.release() 
+            
+        try:
+            connection.close()
+        except Exception as e:
+            logger.exception(f"An error occurred: {e}")
+        finally:
+            connection.sendall(pickle_data)
+    
 
 def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     logger.info(command + message)

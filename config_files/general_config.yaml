@@ -3,11 +3,11 @@ actions_for_mail_cient :
     - "Mail Management"
     - "Exit"
 actions_for_mail_management :
-    - "Count"
     - "List"
     - "Retrieve"
     - "Delete"
     - "Quit"
+    - "Status"
 message_format : "
     From: <username>@<domain name>\n
     To: <username>@<domain name>\n
