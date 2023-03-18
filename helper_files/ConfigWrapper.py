@@ -20,19 +20,19 @@ class ConfigWrapper:
                                       f"{e}")
     
 
-    def getFromConfig(self) -> str:
+    def get_from_config(self) -> str:
         return self._loaded_config_dictionary.get("from")
     
-    def getToConfig(self) -> str:
+    def get_to_config(self) -> str:
         return self._loaded_config_dictionary.get("to")
     
-    def getSubjectConfig(self) -> str:
+    def get_subject_config(self) -> str:
         return self._loaded_config_dictionary.get("subject")
     
-    def getRecievedConfig(self) -> str:
+    def get_received_config(self) -> str:
         return self._loaded_config_dictionary.get("received")
     
-    def getDateLen(self) -> int:
+    def get_date_length(self) -> int:
         return len(self._loaded_config_dictionary.get("date_length"))
 
     def get_mail_client_actions_as_list_of_strings(self) -> List[str]:
@@ -75,3 +75,11 @@ class ConfigWrapper:
     def get_max_thread_load(self) -> int:
         return self._loaded_config_dictionary["max_thread_load"]
 
+    def get_end_line_character(self) -> str:
+        return self._loaded_config_dictionary["end_line_character"]
+
+    def get_mail_separator(self) -> str:
+        return self._loaded_config_dictionary["mail_separator_sign"]
+
+    def get_domain_mail_separator(self) -> str:
+        return self._loaded_config_dictionary["mail_domain_separator"]

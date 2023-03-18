@@ -42,7 +42,7 @@ class MailSending(Action):
             input_list.append(input())
             while self._check_end_line(input_list[-1]):
                 input_list.append(input())
-            input_message = '\n'.join(input_list)
+            input_message = self._config.get_end_line_character().join(input_list)
 
             message = MessageWrapper(self._logger,self._config, input_message)
             if message.verify_format():
@@ -53,9 +53,10 @@ class MailSending(Action):
 
                         smtp_helo(self._logger, self._config, smtp_socket, self._config.get_host)
                         smtp_mail_from(self._logger, self._config, smtp_socket, message.getFrom)
-                        smtp_rcpt_to(self._logger, self._config, smtp_socket,message.getTo)
-                        smtp_data(self._logger, self._config, smtp_socket, message)
+                        smtp_mail_from(self._logger, self._config, conn, message.get_from())
+                        smtp_rcpt_to(self._logger, self._config, conn, message.get_to())
                         smtp_quit(self._logger, self._config, smtp_socket, self._config.get_host)
+                        smtp_quit(receiver = message.get_to())
                         self._logger.info("Mail sent successfully")
 
                     except Exception as e:
