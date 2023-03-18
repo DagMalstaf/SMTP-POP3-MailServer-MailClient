@@ -308,18 +308,18 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         mailbox_file.strip()
         with open(mailbox_file, 'r') as f:
             mailbox = f.readlines()
-        non_deleted_mailbox = get_not_deleted_messages(mailbox)
 
+        non_deleted_mailbox = get_not_deleted_messages(mailbox)
+        number_of_messages = len(non_deleted_mailbox)
+        total_size_mailbox = 0
+        message_size_list = []
+        for message in non_deleted_mailbox:
+            bytes = message.encode('utf-8')
+            size = len(bytes)
+            message_size_list.append(size)
+            total_size_mailbox += size
 
         if message == '':
-            number_of_messages = len(non_deleted_mailbox)
-            total_size_mailbox = 0
-            message_size_list = []
-            for message in non_deleted_mailbox:
-                bytes = message.encode('utf-8')
-                size = len(bytes)
-                message_size_list.append(size)
-                total_size_mailbox += size
             send_message = ("+OK", f" {number_of_messages} messages  ({total_size_mailbox} octets)" + "\r\n")
             pickle_data = pickle.dumps(send_message)
             connection.sendall(pickle_data)
@@ -330,18 +330,23 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             send_message = (".", " " )
             pickle_data = pickle.dumps(send_message)
             connection.sendall(pickle_data)
-            
-            
-
         else:
             message_number = int(message)
+            number_of_messages = len(non_deleted_mailbox)
+            if message_number > number_of_messages:
+                send_message = ("-ERR", f" No such message, only {number_of_messages} in maildrop" "\r\n")
+                pickle_data = pickle.dumps(send_message)
+                connection.sendall(pickle_data)
+            else:
+                send_message = (f"{message_number}", f"{message_size_list[message_number - 1]}" "\r\n")
+                pickle_data = pickle.dumps(send_message)
+                connection.sendall(pickle_data)
+                
+                send_message = (".", " " )
+                pickle_data = pickle.dumps(send_message)
+                connection.sendall(pickle_data)
+                
 
-        sending = True
-        while sending:
-            send_message = ("+OK", " " + str(number_of_messages) + " " + str(total_size_mailbox)+ "\r\n")
-            pickle_data = pickle.dumps(send_message)
-            logger.info(send_message[0] + send_message[1])
-            connection.sendall(pickle_data)
 
     except KeyboardInterrupt:
         logger.exception("Program interrupted by user")
