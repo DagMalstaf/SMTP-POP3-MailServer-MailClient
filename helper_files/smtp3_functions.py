@@ -40,6 +40,7 @@ def smtp_helo(logger : BoundLogger, config: ConfigWrapper, smtp_socket: socket, 
         logger.info("Success")
     else:
         logger.error(f"There was an error sending the HELO command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
+        logger.error(f"Error: {tuple_data[1]}")
 
 """
 Function: smtp_mail_from(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, from_address: str) -> None
@@ -76,6 +77,7 @@ def smtp_mail_from(logger: BoundLogger, config: ConfigWrapper, smtp_socket: sock
         logger.info("Success")
     else:
         logger.error(f"There was an error sending the MAIL FROM command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
+        logger.error(f"Error: {tuple_data[1]}")
     
 
 """
@@ -113,6 +115,7 @@ def smtp_rcpt_to(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket
         logger.info("Success")
     else:
         logger.error(f"There was an error sending the RCPT TO command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
+        logger.error(f"Error: {tuple_data[1]}")
 
 """
 Function: smtp_data(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, data: MessageWrapper) -> None
@@ -150,6 +153,7 @@ def smtp_data(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, d
         logger.info("Mail sent successfully")
     else:
        logger.error(f"There was an error sending the DATA command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
+       logger.error(f"Error: {tuple_data[1]}")
 
 """
 Function: smtp_quit(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, host_domain_name: str) -> None
@@ -185,5 +189,6 @@ def smtp_quit(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, h
         logger.info("Closed the connection to the SMTP server")
     else:
        logger.error(f"There was an error sending the QUIT command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
+       logger.error(f"Error: {tuple_data[1]}")
 
 

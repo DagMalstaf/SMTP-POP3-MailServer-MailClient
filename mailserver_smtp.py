@@ -11,68 +11,37 @@ from helper_files.ConfigWrapper import ConfigWrapper
 # define a semaphore so only 1 thread can access the mailbox.
 mailbox_semaphore = threading.Semaphore(1)
 
-"""
-Function: main() -> None
-
-Description:
-This is the main function of the program. 
-It obtains a listening port using the `retrieve_port()` function, initializes a logger and a `ConfigWrapper` object, 
-creates a `ThreadPoolExecutor` object, and calls the `loop_server()` function to start the server loop. 
-
-Parameters:
-None
-
-Returns:
-None
-
-Example Usage:
-To run the program, simply call the main() function.
-
-"""
-
 
 def main() -> None:
-    listening_port = retrieve_port()
-    logger = get_logger()
-    config = ConfigWrapper(logger, "general_config")
-    executor = ThreadPoolExecutor(max_workers=config.get_max_thread_load())
-    loop_server(logger, config, listening_port, executor)
+    try:
+        logger = get_logger()
+        logger.info("Starting SMTP Server")
+        listening_port = retrieve_port(logger)
+        config = ConfigWrapper(logger, "general_config")
+        loop_server(logger, config, listening_port)
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
 
 
-"""
-Function: retrieve_port() -> int
-
-Description:
-This function prompts the user to enter a port number and returns it if it is a valid port number. 
-If the port number is not valid, the function recursively calls itself until a valid port number is entered.
-
-Parameters:
-None
-
-Returns:
-An integer representing the port number entered by the user.
-
-Example Usage:
-To obtain a valid port number from the user, call the function like this: retrieve_port()
-
-"""
-
-
-def retrieve_port() -> int:
+def retrieve_port(logger: BoundLogger) -> int:
     try:
         my_port = int(input("Enter a port number (non-privileged ports are > 1023): "))
         if my_port > 1023:
             return my_port
-
+        
         else:
-            print("Port number must be greater than 1023.")
-            return retrieve_port()
-    except ValueError:
-        print("Invalid input. Please enter a valid integer.")
-        return retrieve_port()
+            logger.error(f"Error: port number must be > 1023")
+            return retrieve_port(logger)
+    except ValueError as e:
+        logger.error(f"Error: {e}")
+        return retrieve_port(logger)
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
 
 
-def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor: ThreadPoolExecutor) -> None:
+def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
             smtp_socket.bind((config.get_host(), port))
             smtp_socket.listen()
@@ -85,123 +54,84 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int, executor:
                     thread.start()
 
                 except ConnectionResetError:
-                    # client has closed the connection unexpectedly
                     logger.exception("Client closed the connection unexpectedly")
                 except socket.timeout:
-                    # no data received within timeout period
                     logger.exception("No data received from client within timeout period")
-                except KeyboardInterrupt:
-                    # user has interrupted the program execution
-                    logger.info("Program interrupted by user")
+                    send_message = ("554", "No data received from client within timeout period"+ "\r\n")
+                    pickle_data = pickle.dumps(send_message)
+                    conn.sendall(pickle_data)
                 except ValueError:
-                    # data received cannot be converted to string
                     logger.exception("Received data cannot be converted to string")
+                    send_message = ("554", "Received data cannot be converted to string"+ "\r\n")
+                    pickle_data = pickle.dumps(send_message)
+                    conn.sendall(pickle_data)
+                except KeyboardInterrupt:
+                    logger.exception("Program interrupted by user")
+                    send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+                    pickle_data = pickle.dumps(send_message)
+                    conn.sendall(pickle_data)
                 except Exception as e:
-                    # any other exception
                     logger.exception(f"An error occurred: {e}")
+                    send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+                    pickle_data = pickle.dumps(send_message)
+                    conn.sendall(pickle_data)
 
 def handle_client(logger: BoundLogger, config: ConfigWrapper, conn: socket):
-    while True:
-        data = conn.recv(config.get_max_size_package_tcp())
-        if not data:
-            logger.error("Client disconnected unexpectedly")
-            break
-        logger.info(f"Received data from {conn.getpeername()}")
-        tuple_data = pickle.loads(data)
-        command = tuple_data[0]
-        data = tuple_data[1]
-        command_handler(logger, config, command, data, conn)
-
-
-"""
-def handle_helo(logger: BoundLogger, config: ConfigWrapper, message: str, connection: socket,
-                executor: ThreadPoolExecutor) -> None:
-    SMTP_HELO(logger, config, "HELO", message, connection, executor)
-    executor.submit(service_mail_request, logger, config, message, executor, connection)
-
-
-def service_mail_request(logger: BoundLogger, config: ConfigWrapper, data: str, executor: ThreadPoolExecutor,
-                         conn: socket) -> None:
-    with conn:
+    try:
         while True:
-            try:
-                data = conn.recv(config.get_max_size_package_tcp())
-                if not data:
-                    logger.info("No data received, closing connection")
-                    break
-                tuple_data = pickle.loads(data)
-                command = tuple_data[0]
-                data = tuple_data[1]
-                command_handler(logger, config, command, data, executor, conn)
-
-            except ConnectionResetError:
-                # client has closed the connection unexpectedly
-                logger.exception("Client closed the connection unexpectedly")
+            data = conn.recv(config.get_max_size_package_tcp())
+            if not data:
+                logger.error("Client disconnected unexpectedly")
                 break
-            except socket.timeout:
-                # no data received within timeout period
-                logger.exception("No data received from client within timeout period")
-            except KeyboardInterrupt:
-                # user has interrupted the program execution
-                logger.info("Program interrupted by user")
-                break
-            except ValueError:
-                # data received cannot be converted to string
-                logger.exception("Received data cannot be converted to string")
-            except Exception as e:
-                # any other exception
-                logger.exception(f"An error occurred: {e}")
-                break
-"""
+            logger.info(f"Received data from {conn.getpeername()}")
+            tuple_data = pickle.loads(data)
+            command = tuple_data[0]
+            data = tuple_data[1]
+            if command == "QUIT":
+                SMTP_QUIT(logger, config, command, data, conn)
+                return
+            command_handler(logger, config, command, data, conn)
+        
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        conn.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        conn.sendall(pickle_data)
 
 
-
-"""
-Function: command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, executor: ThreadPoolExecutor, connection: socket) -> None
-
-Description:
-This function handles incoming SMTP commands from clients. 
-It identifies the command being executed and calls the appropriate function to handle it.
-
-Parameters:
-- logger (BoundLogger): A logging object used to log events and errors.
-- config (ConfigWrapper): A configuration object used to retrieve server settings.
-- command (str): The SMTP command being executed (e.g. "HELO", "MAIL FROM", "RCPT TO", "DATA", etc.).
-- message (str): The message associated with the SMTP command (e.g. the email address of the sender or recipient, the message to be sent, etc.).
-- executor (ThreadPoolExecutor): A thread pool executor to manage multiple threads.
-- connection (socket): The client's connection to the server.
-
-Returns:
-None
-
-Example Usage:
-To handle incoming SMTP commands from clients, call the function like this:
-logger = get_logger()
-config = ConfigWrapper(logger, "general_config")
-connection, address = smtp_socket.accept()
-command = "MAIL FROM"
-message = "johndoe@example.com"
-executor = ThreadPoolExecutor(max_workers=config.get_max_threads())
-command_handler(logger, config, command, message, executor, connection)
-
-"""
 
 
 def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str,
                     connection: socket) -> None:
     logger.info(f"Received command: {command}")
-    if command == "HELO":
-        SMTP_HELO(logger, config, command, message, connection)
-    elif command == "MAIL FROM:":
-        SMTP_MAIL_FROM(logger, config, command, message, connection)
-    elif command == "RCPT TO:":
-        SMTP_RCPT_TO(logger, config, command, message, connection)
-    elif command == "DATA":
-        SMTP_DATA(logger, config, command, message, connection)
-    elif command == "QUIT":
-        SMTP_QUIT(logger, config, command, message, connection)
-    else:
-        logger.info(f"Invalid command: {command}")
+    try:
+        if command == "HELO":
+            SMTP_HELO(logger, config, command, message, connection)
+        elif command == "MAIL FROM:":
+            SMTP_MAIL_FROM(logger, config, command, message, connection)
+        elif command == "RCPT TO:":
+            SMTP_RCPT_TO(logger, config, command, message, connection)
+        elif command == "DATA":
+            SMTP_DATA(logger, config, command, message, connection)
+        elif command == "QUIT":
+            SMTP_QUIT(logger, config, command, message, connection)
+        else:
+            logger.info(f"Invalid command: {command}")
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
 
 
 """
@@ -237,11 +167,22 @@ SMTP_HELO(logger, config, command, message, connection, executor)
 
 
 def SMTP_HELO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command + message)
-    send_message = ("250 OK", "Hello " + message + "\r\n")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
+    try:
+        logger.info(command + message)
+        send_message = ("250 OK", "Hello " + message + "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        logger.info(send_message[0] + send_message[1])
+        connection.sendall(pickle_data)
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
 
 
 """
@@ -274,11 +215,22 @@ SMTP_MAIL_FROM(logger, config, command, message, connection)
 
 
 def SMTP_MAIL_FROM(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command + message)
-    send_message = ("250", " " + message + "... Sender ok" + "\r\n")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
+    try:
+        logger.info(command + message)
+        send_message = ("250", " " + message + "... Sender ok" + "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        logger.info(send_message[0] + send_message[1])
+        connection.sendall(pickle_data)
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
 
 
 """
@@ -311,11 +263,22 @@ SMTP_RCPT_TO(logger, config, command, message, connection)
 
 
 def SMTP_RCPT_TO(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command + message)
-    send_message = ("250", " " + " root... Recipient ok" + "\r\n")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
+    try:
+        logger.info(command + message)
+        send_message = ("250", " " + " root... Recipient ok" + "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        logger.info(send_message[0] + send_message[1])
+        connection.sendall(pickle_data)
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
 
 
 """
@@ -349,13 +312,24 @@ SMTP_DATA(logger, config, command, message, connection)
 
 
 def SMTP_DATA(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command)
-    logger.info("354 Enter Mail, end with '.' on a line by itself")
-    write_to_mailbox(logger, config, message, mailbox_semaphore)
-    send_message = ("250", " OK message accepted for delivery" + "\r\n")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
+    try:
+        logger.info(command)
+        logger.info("354 Enter Mail, end with '.' on a line by itself")
+        write_to_mailbox(logger, config, message, mailbox_semaphore, connection)
+        send_message = ("250", " OK message accepted for delivery" + "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        logger.info(send_message[0] + send_message[1])
+        connection.sendall(pickle_data)
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
 
 
 """
@@ -388,12 +362,26 @@ SMTP_QUIT(logger, config, command, message, connection)
 
 
 def SMTP_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
-    logger.info(command)
-    send_message = ("221", message + " Closing Connection" + "\r\n")
-    pickle_data = pickle.dumps(send_message)
-    logger.info(send_message[0] + send_message[1])
-    connection.sendall(pickle_data)
-    connection.close()
+    try:
+        logger.info(command)
+        send_message = ("221", message + " Closing Connection" + "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        logger.info(send_message[0] + send_message[1])
+        connection.sendall(pickle_data)
+        connection.close()
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    
+    finally:
+        connection.close()
 
 
 """
@@ -425,18 +413,34 @@ write_to_mailbox(logger, config, message, file_semaphore)
 
 
 def write_to_mailbox(logger: BoundLogger, config: ConfigWrapper, message: MessageWrapper,
-                     file_semaphore: threading.Semaphore) -> None:
-    username = message.getTo()
-    logger.debug(f"this is the username: {username}")
+                     file_semaphore: threading.Semaphore, connection: socket) -> None:
+    try:
+        mail_address = message.get_to().strip()
+        logger.debug(f"this is the username: {mail_address}")
 
-    file_semaphore.acquire()
-    mailbox_file = os.path.join("USERS", username, "my_mailbox.txt")
+        file_semaphore.acquire()
+        mailbox_file = os.path.join("USERS", mail_address, "my_mailbox.txt")
 
-    with open(mailbox_file, 'a') as file:
-        file.write(str(message) + '\n')
-        file.flush()
+        with open(mailbox_file, 'a') as file:
+            file.write(str(message) + '\n')
+            file.flush()
 
-    file_semaphore.release()
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+
+    
+    finally:
+        file_semaphore.release()
+
+
 
 
 if __name__ == "__main__":
