@@ -7,30 +7,6 @@ from helper_files.ConfigWrapper import ConfigWrapper
 from helper_files.functions.general_helper_functions import get_parameters_mail_client, retrieve_command_promt_input
 from helper_files.functions.mail_functions import get_action
 
-"""
-Function: main(logger: BoundLogger, config: ConfigWrapper)
-
-Description:
-This function is the main entry point for the mail client program. 
-It prompts the user for the required parameters using the `get_parameters_mail_client()` function, 
-and then enters a loop to perform mail client actions based on user input. 
-It uses the `retrieve_command_promt_input()` function to prompt the user for input, 
-and the `ConfigWrapper` class to obtain the available mail client actions and their corresponding classes. 
-
-If an error occurs during action execution, it is caught and a generic error message is printed.
-
-
-Parameters:
-- logger: An instance of the `BoundLogger` class for logging events.
-- config: An instance of the `ConfigWrapper` class for accessing configuration parameters.
-
-Returns:
-None
-
-Example Usage:
-To start the mail client program, call the function like this: main(logger, config)
-
-"""
 def main(logger: BoundLogger, config: ConfigWrapper ):
     ip_address, SMTP_port, POP3_port, username = get_parameters_mail_client(logger)
     while True:
