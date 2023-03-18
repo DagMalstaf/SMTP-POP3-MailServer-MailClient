@@ -21,32 +21,33 @@ class MailManagement(Action):
 
     def action(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as pop3_socket:
-            pop3_socket.bind((self._config.get_host(), self._POP3_port))
-            pop3_socket.listen()
-            self._logger.info(f"Waiting for connection on port:  {pop3_socket}")
-            conn, addr = pop3_socket.accept()
-            with conn:
-                if pop3_authentication(conn):
-                    self._logger.info("Authentication successful")
-                    while True:
-                        try:
-                            action_string = input(f"Provide action to perform [{self._config.get_mail_management_actions_as_string()}]: ")
-                            if action_string == "Quit":
-                                pop3_QUIT(self._logger, self._config, conn)
-                            elif action_string == "Status":
-                                pop3_STAT()
-                            elif action_string == "List":
-                                pop3_LIST()
-                            elif action_string == "Retrieve":
-                                pop3_RETR()
-                            elif action_string == "Delete":
-                                pop3_DELE()
-                            else:
-                                self._logger.error(f"Invalid action: {action_string}")
-                        except Exception as e:
-                            self._logger.exception(f"An error occurred: {e}")        
-                else:
-                    raise RestartMailServerError("Restarting Mail Server")
+            pop3_socket.connect((self._ip_address, self._POP3_port))
+            self._logger.info(f"Connected to POP3 server at port {self._POP3_port}")
+            server_confirmation = pop3_socket.recv(self._config.get_max_size_package_tcp()).decode()
+            self._logger.info(f"Server confirmation: {server_confirmation}")
+            if pop3_authentication(self, pop3_socket):
+                self._logger.info("Authentication successful")
+                while True:
+                    try:
+                        action_string = input(f"Provide action to perform [{self._config.get_mail_management_actions_as_string()}]: ")
+                        if action_string == "Quit":
+                            pop3_QUIT(self._logger, self._config, pop3_socket)
+                        elif action_string == "Status":
+                            pop3_STAT(self._logger, self._config, pop3_socket)
+                        elif action_string == "List":
+                            pop3_LIST()
+                        elif action_string == "Retrieve":
+                            pop3_RETR()
+                        elif action_string == "Delete":
+                            pop3_DELE()
+                        else:
+                            self._logger.error(f"Invalid action: {action_string}")
+                    except Exception as e:
+                        self._logger.exception(f"An error occurred: {e}")
+                        raise e        
+            else:
+                self._logger.error("Authentication failed")
+                raise RestartMailServerError("Restarting Mail Server")
 
 
     

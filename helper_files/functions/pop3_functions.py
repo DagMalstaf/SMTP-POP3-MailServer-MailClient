@@ -11,21 +11,21 @@ def pop3_authentication(self, connection) -> bool:
             while True:
                 user_authentication_response = pop3_USER(self._logger, self._config, connection, self._username)
                 if not user_authentication_response:
-                    self._logger.info("User authentication failed")
-                    self._username = retrieve_command_promt_input("Please enter your correct username or 'quit' to terminate : ")
+                    self._logger.error("User authentication failed")
+                    self._username = retrieve_command_promt_input("Please enter your correct username or 'quit' to terminate : ", self._logger,)
                     if self._username == "quit":
                         return False
                     continue
                 else:
                     self._logger.info("User authentication successful")
-                    self._password = retrieve_command_promt_input("Provide password of mail account or 'quit' to terminate : ", hash_input=True)
+                    self._password = retrieve_command_promt_input("Provide password of mail account or 'quit' to terminate : ", self._logger, hash_input=True)
                     if self._password == "quit":
                         return False
                     else:
                         pass_authentication_response = pop3_PASS(self._logger, self._config, connection, self._password)
                         if not pass_authentication_response:
-                            self._logger.info("Password authentication failed")
-                            self._password = retrieve_command_promt_input("Please enter your correct password or 'quit' to terminate : ")
+                            self._logger.error("Password authentication failed")
+                            self._password = retrieve_command_promt_input("Please enter your correct password or 'quit' to terminate : ", self._logger,)
                             if self._password == "quit":
                                 return False
                             continue

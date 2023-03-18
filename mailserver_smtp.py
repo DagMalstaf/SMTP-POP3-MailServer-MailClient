@@ -76,7 +76,7 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
                     pickle_data = pickle.dumps(send_message)
                     conn.sendall(pickle_data)
 
-def handle_client(logger: BoundLogger, config: ConfigWrapper, conn: socket):
+def handle_client(logger: BoundLogger, config: ConfigWrapper, conn: socket) -> None:
     try:
         while True:
             data = conn.recv(config.get_max_size_package_tcp())
