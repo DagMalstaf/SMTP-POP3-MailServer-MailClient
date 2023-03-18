@@ -100,8 +100,30 @@ def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
 
     
 
-def pop3_LIST() -> None:
-    pass
+def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
+    logger.info("Please provide the message number you want to list. If you don't enter a number all messages will be listed.")
+    message_number = retrieve_command_promt_input("Message number: ", logger)
+    send_message = ("LIST", message_number)
+    pickle_data = pickle.dumps(send_message)
+    pop3_socket.sendall(pickle_data)
+    response_message = pop3_socket.recv(config.get_max_size_package_tcp())
+    tuple_data = pickle.loads(response_message)
+    response_code = tuple_data[0]
+    if response_code == "+OK":
+        logger.info(response_code + tuple_data[1])
+        recieving = True
+        while recieving:
+            response_message = pop3_socket.recv(config.get_max_size_package_tcp())
+            tuple_data = pickle.loads(response_message)
+            response_code = tuple_data[0]
+            message = tuple_data[1]
+            if response_code == ".":
+                recieving = False
+            logger.info(message)
+    else:
+        logger.error(f"Recieved response code: {response_code} from POP3 server")
+        logger.error(f"Recieved message: {tuple_data[1]} from POP3 server")
+    
 
 def pop3_RETR() -> None:
     pass
