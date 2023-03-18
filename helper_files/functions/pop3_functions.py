@@ -18,7 +18,7 @@ def pop3_authentication(self, connection) -> bool:
                     continue
                 else:
                     self._logger.info("User authentication successful")
-                    self._password = retrieve_command_promt_input("Provide password of mail account or 'quit' to terminate : ", self._logger, hash_input=True)
+                    self._password = retrieve_command_promt_input("Provide password of mail account or 'quit' to terminate : ", self._logger, hash_input=False)
                     if self._password == "quit":
                         return False
                     else:

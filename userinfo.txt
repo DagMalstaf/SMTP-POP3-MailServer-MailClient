@@ -1,2 +1,2 @@
-DagMalstaf ComputerNetworks1
-TristanToye ComputerNetworks2
+dag.malstaf@student.kuleuven.be ComputerNetworks1
+tristan.toye@student.kuleuven.be ComputerNetworks2

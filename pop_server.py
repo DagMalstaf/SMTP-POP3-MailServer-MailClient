@@ -55,6 +55,7 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
                 conn.send(("+OK POP3 server ready").encode())
                 thread = threading.Thread(target=handle_client, args= (logger, config, conn))
                 thread.start()
+                
             
             except ConnectionResetError:
                 # client has closed the connection unexpectedly
@@ -74,6 +75,8 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
             
 
 def handle_client(logger: BoundLogger, config: ConfigWrapper, conn: socket.socket) -> None:
+    thread_id = threading.get_ident()
+    logger.info(f"Thread {thread_id} started")
     global thread_local
     thread_local.server_state = str("AUTHORIZATION")
     thread_local.session_username = str()
@@ -291,6 +294,8 @@ def get_messages_list(mailbox: list[str]) -> list[str]:
             current_message += line
     if current_message != "":
         messages.append(current_message.strip())
+    
+    return messages
 
 
 if __name__ == "__main__":
