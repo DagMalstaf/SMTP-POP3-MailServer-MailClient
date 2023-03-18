@@ -8,7 +8,7 @@ from helper_files.Action import Action
 from typing import TYPE_CHECKING
 
 
-from helper_files.functions.pop3_functions import pop3_LIST, pop3_USER, pop3_PASS, pop3_QUIT, pop3_DELE, pop3_RETR, pop3_STAT, pop3_authentication
+from helper_files.functions.pop3_functions import pop3_LIST, pop3_QUIT, pop3_DELE, pop3_RETR, pop3_STAT, pop3_authentication
 if TYPE_CHECKING:
     from helper_files.ConfigWrapper import ConfigWrapper
 
