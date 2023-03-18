@@ -208,7 +208,7 @@ def handle_result(task_id: str, future: Future) -> typing.Any:
 
 
 def write_to_mailbox(logger: BoundLogger, config: ConfigWrapper, message:MessageWrapper) -> None:
-    username = message.getToUsername()
+    username = message.get_to_username()
     
     file_semaphore.acquire()
     with open('/{username}/my_mailbox.txt', 'a') as file:

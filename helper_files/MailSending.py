@@ -39,7 +39,7 @@ class MailSending(Action):
             input_list: List[str] = list()
             while self._check_end_line(input_list[-1]):
                 input_list.append(input())
-            input_message = '\n'.join(input_list)
+            input_message = self._config.get_end_line_character().join(input_list)
 
             message = MessageWrapper(self._logger,self._config, input_message)
             if message.verify_format():
@@ -50,10 +50,10 @@ class MailSending(Action):
                     with conn:
                         self._logger.info(f"{addr} Service Ready")
                         smtp_helo(conn, self._config.get_host(), self._config, self._logger)
-                        smtp_mail_from(self._logger, self._config, conn, message.getFrom())
-                        smtp_rcpt_to(self._logger, self._config, conn,message.getTo())
+                        smtp_mail_from(self._logger, self._config, conn, message.get_from())
+                        smtp_rcpt_to(self._logger, self._config, conn, message.get_to())
                         smtp_data(self._logger, self._config, conn, message)
-                        smtp_quit(receiver = message.getTo())
+                        smtp_quit(receiver = message.get_to())
                         self._logger.info("Mail sent successfully")
                 correct_format = True
             else:
