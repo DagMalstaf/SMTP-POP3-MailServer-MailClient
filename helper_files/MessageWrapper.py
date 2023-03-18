@@ -20,10 +20,12 @@ class MessageWrapper():
     
     def __get_from_index(self) -> int:
         return self._message.find(self._config.get_from_config()) + len(self._config.get_from_config())
+        return self._message.find(to_str) + len(to_str)
     
     def __get_to_index(self) -> int:
         return self._message.find(self._config.get_to_config()) + len(self._config.get_to_config())
-    
+        return self._message.find(from_str, self.__getFromIndex()) + len(from_str)
+
     def __get_subject_index(self) -> int:
         return self._message.find(self._config.get_subject_config()) + len(self._config.get_subject_config())
     
@@ -35,6 +37,11 @@ class MessageWrapper():
     
     def __get_sub_message(self, index: int):
         return self._message[index:self.__get_end_line_index_from(index)]
+        return self._message[self._message.find(from_str) + len(from_str):self.__getSubjectIndex()]
+    """
+    def getTo(self) -> str:
+        return self._message[self.__getToIndex():self.__getSubjectIndex()]
+    """
       
     def get_from(self) -> str:
         return self.__get_sub_message(self.__get_from_index())

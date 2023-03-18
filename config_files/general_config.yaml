@@ -3,13 +3,12 @@ actions_for_mail_cient :
     - "Mail Management"
     - "Exit"
 actions_for_mail_management :
-    - "Count"
     - "List"
     - "Retrieve"
     - "Delete"
     - "Quit"
-message_format : "
-    From: <username>@<domain name>\n
+    - "Status"
+message_format : "From: <username>@<domain name>\n
     To: <username>@<domain name>\n
     Subject: <subject string, max 150 characters>\n
     <Message body – one or more lines, terminated by a final line with only a full stop character '.'>\n
@@ -24,5 +23,5 @@ end_line_character : "\n"
 mail_separator_sign: "@"
 mail_domain_separator: "."
 host : "127.0.0.1"
-max_size_package_tcp : 1024
+max_size_package_tcp : 100000
 max_thread_load : 100
