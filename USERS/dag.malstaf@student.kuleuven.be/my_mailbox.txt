@@ -3,3 +3,8 @@ To: dag.malstaf@student.kuleuven.be
 Subject: test mail
 hallo dag, dit is een test
 .
+From: dag.malstaf@kuleuven.be
+To: dag.malstaf@student.kuleuven.be
+Subject: test mail
+Hey de taak is bijna klaar!
+.
