@@ -52,8 +52,8 @@ class MailSending(Action):
                         self._logger.info(f"Connected to SMTP server at port {self._SMTP_port}")
                         smtp_helo(self._logger, self._config, smtp_socket, self._config.get_host)
                         smtp_mail_from(self._logger, self._config, smtp_socket, message.get_from(), self._config.get_host)
-                        smtp_rcpt_to(self._logger, self._config, smtp_socket, message.get_to())
-                        smtp_data(self._logger, self._config, smtp_socket, message)
+                        smtp_rcpt_to(self._logger, self._config, smtp_socket, message.get_to(), self._config.get_host)
+                        smtp_data(self._logger, self._config, smtp_socket, message, self._config.get_host)
                         smtp_quit(self._logger, self._config, smtp_socket, self._config.get_host)
                         self._logger.info("Mail sent successfully")
 
