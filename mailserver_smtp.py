@@ -13,16 +13,18 @@ mailbox_semaphore = threading.Semaphore(1)
 
 
 def main() -> None:
+    logger = get_logger()
+    logger.info("Starting SMTP Server")
     try:
-        logger = get_logger()
-        logger.info("Starting SMTP Server")
         listening_port = retrieve_port(logger)
         config = ConfigWrapper(logger, "general_config")
         loop_server(logger, config, listening_port)
     except KeyboardInterrupt:
         logger.exception("Program interrupted by user")
+        pass
     except Exception as e:
         logger.exception(f"An error occurred: {e}")
+        pass
 
 
 def retrieve_port(logger: BoundLogger) -> int:
@@ -37,8 +39,10 @@ def retrieve_port(logger: BoundLogger) -> int:
     except ValueError as e:
         logger.error(f"Error: {e}")
         return retrieve_port(logger)
+        pass
     except KeyboardInterrupt:
         logger.exception("Program interrupted by user")
+        pass
 
 
 def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
@@ -55,26 +59,31 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
 
                 except ConnectionResetError:
                     logger.exception("Client closed the connection unexpectedly")
+                    pass
                 except socket.timeout:
                     logger.exception("No data received from client within timeout period")
                     send_message = ("554", "No data received from client within timeout period"+ "\r\n")
                     pickle_data = pickle.dumps(send_message)
                     conn.sendall(pickle_data)
+                    pass
                 except ValueError:
                     logger.exception("Received data cannot be converted to string")
                     send_message = ("554", "Received data cannot be converted to string"+ "\r\n")
                     pickle_data = pickle.dumps(send_message)
                     conn.sendall(pickle_data)
+                    pass
                 except KeyboardInterrupt:
                     logger.exception("Program interrupted by user")
                     send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
                     pickle_data = pickle.dumps(send_message)
                     conn.sendall(pickle_data)
+                    pass
                 except Exception as e:
                     logger.exception(f"An error occurred: {e}")
                     send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
                     pickle_data = pickle.dumps(send_message)
                     conn.sendall(pickle_data)
+                    pass
 
 def handle_client(logger: BoundLogger, config: ConfigWrapper, conn: socket) -> None:
     try:
@@ -97,11 +106,13 @@ def handle_client(logger: BoundLogger, config: ConfigWrapper, conn: socket) -> N
         send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
         pickle_data = pickle.dumps(send_message)
         conn.sendall(pickle_data)
+        pass
     except Exception as e:
         logger.exception(f"An error occurred: {e}")
         send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
         pickle_data = pickle.dumps(send_message)
         conn.sendall(pickle_data)
+        pass
 
 
 
@@ -128,11 +139,13 @@ def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, me
         send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
         pickle_data = pickle.dumps(send_message)
         connection.sendall(pickle_data)
+        pass
     except Exception as e:
         logger.exception(f"An error occurred: {e}")
         send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
         pickle_data = pickle.dumps(send_message)
         connection.sendall(pickle_data)
+        pass
 
 
 """
@@ -330,8 +343,6 @@ def SMTP_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         pickle_data = pickle.dumps(send_message)
         logger.info(send_message[0] + send_message[1])
         connection.sendall(pickle_data)
-    except Exception as e:
-        raise e
     finally:
         connection.close()
 
@@ -376,8 +387,6 @@ def write_to_mailbox(logger: BoundLogger, config: ConfigWrapper, message: Messag
         with open(mailbox_file, 'a') as file:
             file.write(str(message) + '\n')
             file.flush()
-    except Exception as e:
-        raise e
     finally:
         file_semaphore.release()
 

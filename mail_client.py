@@ -8,16 +8,11 @@ from helper_files.functions.mail_functions import get_action
 
 def serve_forever(logger: BoundLogger, config: ConfigWrapper ):
     ip_address, SMTP_port, POP3_port, username = get_parameters_mail_client(logger)
-    action = str()
     while True:
-        try:
-            action = retrieve_command_promt_input(f"Please select action [{config.get_mail_client_actions_as_string()}]: ", logger)
-            wrapper_class_mail_action = get_action(logger,action)(logger, config,ip_address,SMTP_port, POP3_port, username)
-            logger.info(f"Succesfully starting {action} action")
-            wrapper_class_mail_action.action()
-        except Exception as e:
-            logger.error(f"An error occurred while executing {action} action", exc_info=True)
-            raise e
+        action = retrieve_command_promt_input(f"Please select action [{config.get_mail_client_actions_as_string()}]: ", logger)
+        wrapper_class_mail_action = get_action(logger,action)(logger, config,ip_address,SMTP_port, POP3_port, username)
+        logger.info(f"Succesfully starting {action} action")
+        wrapper_class_mail_action.action()
 
 
 def main() -> None:
@@ -29,6 +24,7 @@ def main() -> None:
     except RestartMailServerError as e:
         logger.info("Restarting mail client")
         main()
+        pass
 
 
 if __name__ == "__main__":

@@ -1,5 +1,4 @@
 from structlog import BoundLogger
-from typing import TYPE_CHECKING
 import socket
 
 
@@ -28,23 +27,20 @@ class MailManagement(Action):
             if pop3_authentication(self._logger, self._config, self._username, pop3_socket):
                 self._logger.info("Authentication successful")
                 while True:
-                    try:
-                        action_string = input(f"Provide action to perform [{self._config.get_mail_management_actions_as_string()}]: ")
-                        if action_string == "Quit":
-                            pop3_QUIT(self._logger, self._config, pop3_socket)
-                        elif action_string == "Status":
-                            pop3_STAT(self._logger, self._config, pop3_socket)
-                        elif action_string == "List":
-                            pop3_LIST(self._logger, self._config, pop3_socket)
-                        elif action_string == "Retrieve":
-                            pop3_RETR()
-                        elif action_string == "Delete":
-                            pop3_DELE()
-                        else:
-                            self._logger.error(f"Invalid action: {action_string}")
-                    except Exception as e:
-                        self._logger.exception(f"An error occurred: {e}")
-                        raise e        
+                    action_string = input(f"Provide action to perform [{self._config.get_mail_management_actions_as_string()}]: ")
+                    if action_string == "Quit":
+                        pop3_QUIT(self._logger, self._config, pop3_socket)
+                    elif action_string == "Status":
+                        pop3_STAT(self._logger, self._config, pop3_socket)
+                    elif action_string == "List":
+                        pop3_LIST(self._logger, self._config, pop3_socket)
+                    elif action_string == "Retrieve":
+                        pop3_RETR()
+                    elif action_string == "Delete":
+                        pop3_DELE()
+                    else:
+                        self._logger.error(f"Invalid action: {action_string}")
             else:
                 self._logger.error("Authentication failed")
-                raise RestartMailServerError("Restarting Mail Server")
+                raise RestartMailServerError
+

@@ -21,8 +21,10 @@ def main() -> None:
         loop_server(logger, config, listening_port)
     except KeyboardInterrupt:
         logger.exception("Program interrupted by user")
+        pass
     except Exception as e:
         logger.exception(f"An error occurred: {e}")
+        pass
 
 
 def retrieve_port(logger: BoundLogger) -> int:
@@ -37,9 +39,10 @@ def retrieve_port(logger: BoundLogger) -> int:
     except ValueError as e:
         logger.error(f"Error: {e}")
         return retrieve_port(logger)
+        pass
     except KeyboardInterrupt:
         logger.exception("Program interrupted by user")
-
+        pass
 
 
 def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
@@ -58,25 +61,30 @@ def loop_server(logger: BoundLogger, config: ConfigWrapper, port: int) -> None:
             except ConnectionResetError:
                 # client has closed the connection unexpectedly
                 logger.exception("Client closed the connection unexpectedly")
+                pass
             except socket.timeout:
                 # no data received within timeout period
                 logger.exception("No data received from client within timeout period")
+                pass
             except KeyboardInterrupt:
                 # user has interrupted the program execution
-                logger.info("Program interrupted by user") 
+                logger.info("Program interrupted by user")
+                pass
             except ValueError:
                 # data received cannot be converted to string
                 logger.exception("Received data cannot be converted to string")
+                pass
             except Exception as e:
                 # any other exception
                 logger.exception(f"An error occurred: {e}")
+                pass
             
 
 def handle_client(logger: BoundLogger, config: ConfigWrapper, conn: socket.socket) -> None:
     thread_id = threading.get_ident()
     logger.info(f"Thread {thread_id} started")
     global thread_local
-    thread_local.server_state = str("AUTHORIZATION")
+    thread_local.server_state = "AUTHORIZATION"
     thread_local.session_username = str()
     thread_local.user_authenticated = False
     try:
@@ -92,21 +100,20 @@ def handle_client(logger: BoundLogger, config: ConfigWrapper, conn: socket.socke
             data = tuple_data[1]
             if command == "QUIT":
                 pop3_QUIT(logger, config, command, data, conn)
-                return
             command_handler(logger, config, command, data, conn)
-          
         
     except KeyboardInterrupt:
         logger.exception("Program interrupted by user")
         send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
         pickle_data = pickle.dumps(send_message)
         conn.sendall(pickle_data)
+        pass
     except Exception as e:
         logger.exception(f"An error occurred: {e}")
         send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
         pickle_data = pickle.dumps(send_message)
         conn.sendall(pickle_data)
-
+        pass
 
 
 def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: Union[str,int], connection: socket) -> None:
@@ -164,25 +171,19 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         for line in file:
             username, password = line.strip().split()
             passwords.add(password)
-    try:
-        if message in passwords:
-            send_message = ("+OK", " Password accepted")
-            pickle_data = pickle.dumps(send_message)
-            logger.info(send_message[0] + send_message[1])
-            thread_local.server_state = str("TRANSACTION")
-            logger.info(f"Server is now in the {thread_local.server_state} STATE")
-            connection.sendall(pickle_data)
-        else:
-            send_message = ("-ERR", " [AUTH] Invalid password")
-            pickle_data = pickle.dumps(send_message)
-            logger.info(send_message[0] + send_message[1])
-            connection.sendall(pickle_data)
-    except Exception as e:        
-        logger.exception(f"An error occurred: {e}")
-        send_message = ("-ERR", " [AUTH] Authentication failed due to server error")
+    if message in passwords:
+        send_message = ("+OK", " Password accepted")
+        pickle_data = pickle.dumps(send_message)
+        logger.info(send_message[0] + send_message[1])
+        thread_local.server_state = str("TRANSACTION")
+        logger.info(f"Server is now in the {thread_local.server_state} STATE")
+        connection.sendall(pickle_data)
+    else:
+        send_message = ("-ERR", " [AUTH] Invalid password")
         pickle_data = pickle.dumps(send_message)
         logger.info(send_message[0] + send_message[1])
         connection.sendall(pickle_data)
+
 
 
 def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
@@ -228,9 +229,6 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             pickle_data = pickle.dumps(send_message)
             logger.info(send_message[0] + send_message[1])
             connection.sendall(pickle_data)
-
-        except Exception as e:
-            raise e
         finally:
             mailbox_semaphore.release()
                 
@@ -312,11 +310,13 @@ def pop3_RETR(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
         pickle_data = pickle.dumps(send_message)
         connection.sendall(pickle_data)
+        pass
     except Exception as e:
         logger.exception(f"An error occurred: {e}")
         send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
         pickle_data = pickle.dumps(send_message)
         connection.sendall(pickle_data)
+        pass
 
 def pop3_DELE(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     global thread_local
@@ -327,11 +327,13 @@ def pop3_DELE(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
         pickle_data = pickle.dumps(send_message)
         connection.sendall(pickle_data)
+        pass
     except Exception as e:
         logger.exception(f"An error occurred: {e}")
         send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
         pickle_data = pickle.dumps(send_message)
         connection.sendall(pickle_data)
+        pass
 
 
 def get_messages_list(mailbox: list[str]) -> list[str]:
