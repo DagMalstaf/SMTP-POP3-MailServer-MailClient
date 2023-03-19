@@ -46,20 +46,19 @@ To hash the input and retrieve the hashed value, call the function like this: re
 
 """
 def retrieve_command_promt_input(message_to_display:str, logger: BoundLogger, cast_to_int: bool = False, hash_input: bool = False, port: bool= False) -> Union[str,int]:
-    try:
-        if port:
-            command_prompt_input = retrieve_port(message_to_display, logger)
-            return command_prompt_input
-        command_prompt_input = input(message_to_display)
-        if cast_to_int:
-            command_prompt_input = int(command_prompt_input)
-        if hash_input:
-            if command_prompt_input == "quit":
-                return "quit"
-            command_prompt_input = hash_string(command_prompt_input)
+    if port:
+        command_prompt_input = retrieve_port(message_to_display, logger)
         return command_prompt_input
-    except Exception as e:
-            logger.error(f"Error: {e}") 
+    command_prompt_input = input(message_to_display)
+    if cast_to_int:
+        command_prompt_input = int(command_prompt_input)
+    if hash_input:
+        if command_prompt_input == "quit":
+            return "quit"
+        command_prompt_input = hash_string(command_prompt_input)
+    return command_prompt_input
+
+
 
 
 def retrieve_port(message_to_display:str, logger: BoundLogger) -> int:
@@ -74,6 +73,7 @@ def retrieve_port(message_to_display:str, logger: BoundLogger) -> int:
     except ValueError as e:
         logger.error(f"Error: {e}")
         return retrieve_port(message_to_display, logger)
+        pass
 
 
 """
