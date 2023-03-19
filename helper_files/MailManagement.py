@@ -35,13 +35,18 @@ class MailManagement(Action):
                         elif action_string == "Status":
                             pop3_STAT(self._logger, self._config, pop3_socket)
                         elif action_string == "List":
-                            pop3_LIST()
+                            pop3_LIST(self._logger, self._config, pop3_socket)
                         elif action_string == "Retrieve":
                             pop3_RETR()
                         elif action_string == "Delete":
                             pop3_DELE()
                         else:
                             self._logger.error(f"Invalid action: {action_string}")
+                    
+                    except RestartMailServerError as e:
+                        self._logger.error(e)
+                        pass
+
                     except Exception as e:
                         self._logger.exception(f"An error occurred: {e}")
                         raise e        

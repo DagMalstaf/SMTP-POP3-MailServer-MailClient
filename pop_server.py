@@ -313,20 +313,21 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         number_of_messages = len(non_deleted_mailbox)
         total_size_mailbox = 0
         message_size_list = []
-        for message in non_deleted_mailbox:
-            bytes = message.encode('utf-8')
+        for scan_listing in non_deleted_mailbox:
+            bytes = scan_listing.encode('utf-8')
             size = len(bytes)
             message_size_list.append(size)
             total_size_mailbox += size
 
-        if message == '':
+        if message == '' or message == None or message == " ":
             send_message = ("+OK", f" {number_of_messages} messages  ({total_size_mailbox} octets)" + "\r\n")
             pickle_data = pickle.dumps(send_message)
             connection.sendall(pickle_data)
             for scan_listing in range(1, number_of_messages):
-                send_message = (f"{scan_listing}", f"{message_size_list[scan_listing-1]}" "\r\n")
+                send_message = ("+OK", f" {scan_listing} {message_size_list[scan_listing-1]}" + "\r\n")
                 pickle_data = pickle.dumps(send_message)
                 connection.sendall(pickle_data)
+
             send_message = (".", " " )
             pickle_data = pickle.dumps(send_message)
             connection.sendall(pickle_data)
@@ -334,14 +335,14 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             message_number = int(message)
             number_of_messages = len(non_deleted_mailbox)
             if message_number > number_of_messages:
-                send_message = ("-ERR", f" No such message, only {number_of_messages} in maildrop" "\r\n")
+                send_message = ("-ERR", f" No such message, only {number_of_messages} in maildrop" + "\r\n")
                 pickle_data = pickle.dumps(send_message)
                 connection.sendall(pickle_data)
             else:
-                send_message = (f"{message_number}", f"{message_size_list[message_number - 1]}" "\r\n")
+                send_message = ("+OK", f"{message_number}   {message_size_list[message_number - 1]}" + "\r\n")
                 pickle_data = pickle.dumps(send_message)
                 connection.sendall(pickle_data)
-                
+
                 send_message = (".", " " )
                 pickle_data = pickle.dumps(send_message)
                 connection.sendall(pickle_data)
