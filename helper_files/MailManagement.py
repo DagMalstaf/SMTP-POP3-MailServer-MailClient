@@ -53,7 +53,3 @@ class MailManagement(Action):
             else:
                 self._logger.error("Authentication failed")
                 raise RestartMailServerError("Restarting Mail Server")
-
-
-    
-

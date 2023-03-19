@@ -7,7 +7,7 @@ from custom_exceptions.RestartMailServerError import RestartMailServerError
 from helper_files.functions.general_helper_functions import retrieve_command_promt_input
 from helper_files.ConfigWrapper import ConfigWrapper
 
-def pop3_authentication(self, connection) -> bool:
+def pop3_authentication(logger: BoundLogger, username: str, connection: socket) -> bool:
         try:
             while True:
                 user_authentication_response = pop3_USER(self._logger, self._config, connection, self._username)
@@ -123,9 +123,6 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
             if response_code == ".":
                 recieving = False
                 return
-            
-        
-    
 
 def pop3_RETR() -> None:
     pass
