@@ -17,7 +17,7 @@ def pop3_authentication(logger: BoundLogger, config: ConfigWrapper, username: st
                         return False
                 else:
                     logger.info("User authentication successful")
-                    password = retrieve_command_promt_input("Provide password of mail account or 'quit' to terminate : ", logger, hash_input=False)
+                    password = retrieve_command_promt_input("Provide password of mail account or 'quit' to terminate : ", logger, hash_input=True)
                     if password == "quit":
                         return False
                     pass_authentication_response = __pop3_PASS(logger, config, connection, password)

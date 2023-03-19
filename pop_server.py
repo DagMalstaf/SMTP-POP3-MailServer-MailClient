@@ -283,7 +283,7 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             pickle_data = pickle.dumps(send_message)
             connection.sendall(pickle_data)
 
-        send_message = (".", " " )
+        send_message = (".", " ")
         pickle_data = pickle.dumps(send_message)
         connection.sendall(pickle_data)
     else:
