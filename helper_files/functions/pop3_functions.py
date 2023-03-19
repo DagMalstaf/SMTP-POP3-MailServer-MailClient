@@ -122,9 +122,6 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
             logger.debug(f"Recieved response code: {response_code} from POP3 server")
             logger.debug(f"Recieved message: {tuple_data[1]} from POP3 server")
             
-            
-        
-    
 
 def pop3_RETR(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
     logger.info("Please provide the message number you want to retrieve.\n")
