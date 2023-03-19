@@ -18,7 +18,6 @@ def main(logger: BoundLogger, config: ConfigWrapper ):
         except Exception as e:
             logger.error(f"An error occurred while executing {action} action", exc_info=True)
             raise e
-            
 
 
 
@@ -30,3 +29,4 @@ if __name__ == "__main__":
         main(logger,config)
     except RestartMailServerError as e:
         main(logger, config)
+        

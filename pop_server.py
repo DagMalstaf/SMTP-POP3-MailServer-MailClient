@@ -3,14 +3,12 @@ import threading
 import pickle
 import os
 
-from concurrent.futures import ThreadPoolExecutor
 from structlog import get_logger, BoundLogger
 from helper_files.ConfigWrapper import ConfigWrapper
 
 # define a semaphore so only 1 thread can access the mailbox.
 mailbox_semaphore = threading.Semaphore(1)
 thread_local = threading.local()
-
 
 
 def main() -> None:
@@ -267,8 +265,7 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         pickle_data = pickle.dumps(send_message)
         connection.sendall(pickle_data)
                 
-                
-        
+
 
 def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     global thread_local

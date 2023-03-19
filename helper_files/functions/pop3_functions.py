@@ -16,7 +16,7 @@ def pop3_authentication(self, connection) -> bool:
                     self._username = retrieve_command_promt_input("Please enter your correct username or 'quit' to terminate : ", self._logger,)
                     if self._username == "quit":
                         return False
-                    continue
+                    
                 else:
                     self._logger.info("User authentication successful")
                     self._password = retrieve_command_promt_input("Provide password of mail account or 'quit' to terminate : ", self._logger, hash_input=False)
@@ -29,7 +29,7 @@ def pop3_authentication(self, connection) -> bool:
                             self._password = retrieve_command_promt_input("Please enter your correct password or 'quit' to terminate : ", self._logger,)
                             if self._password == "quit":
                                 return False
-                            continue
+                            
                         else:
                             self._logger.info("Password authentication successful")
                             return True
@@ -79,7 +79,7 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
     if response_code == "+OK":
         logger.info(response_code + tuple_data[1])
         pop3_socket.close()
-        raise RestartMailServerError
+        raise RestartMailServerError()
     else:
         logger.error(f"Recieved response code: {response_code} from POP3 server")
 

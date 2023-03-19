@@ -43,6 +43,7 @@ class MailManagement(Action):
                         else:
                             self._logger.error(f"Invalid action: {action_string}")
 
+                    
                     except Exception as e:
                         self._logger.exception(f"An error occurred: {e}")
                         raise e        
