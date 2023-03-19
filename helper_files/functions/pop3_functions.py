@@ -50,7 +50,6 @@ def pop3_USER(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket, u
         logger.error(response_code + tuple_data[1])
         return False
     else:
-        logger.info(response_code + tuple_data[1])
         return True
     
 
@@ -66,7 +65,6 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket, p
         logger.error(response_code + tuple_data[1])
         return False
     else:
-        logger.info(response_code + tuple_data[1])
         return True
     
 
@@ -94,14 +92,40 @@ def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
     tuple_data = pickle.loads(response_message)
     response_code = tuple_data[0]
     if response_code == "+OK":
-        logger.info(response_code + tuple_data[1])
+        logger.info(tuple_data[1])
     else:
         logger.error(f"Recieved response code: {response_code} from POP3 server")
 
     
 
-def pop3_LIST() -> None:
-    pass
+def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
+    logger.info("Please provide the message number you want to list.\n If you don't enter a number all messages will be listed.")
+    message_number = retrieve_command_promt_input("Message number: ", logger)
+    send_message = ("LIST", message_number)
+    pickle_data = pickle.dumps(send_message)
+    pop3_socket.sendall(pickle_data)
+    response_message = pop3_socket.recv(config.get_max_size_package_tcp())
+    
+    tuple_data = pickle.loads(response_message)
+    response_code = tuple_data[0]
+    if response_code == "-ERR":
+        logger.error(f"Recieved response code: {response_code} from POP3 server")
+        logger.error(f"Recieved message: {tuple_data[1]} from POP3 server")
+    else:
+        recieving = True
+        logger.info(tuple_data[1])
+        while recieving:
+            response_message_for_list = pop3_socket.recv(config.get_max_size_package_tcp())
+            tuple_data = pickle.loads(response_message_for_list)
+            response_code = tuple_data[0]
+            message = tuple_data[1]
+            logger.info(message)
+            if response_code == ".":
+                recieving = False
+                return
+            
+        
+    
 
 def pop3_RETR() -> None:
     pass

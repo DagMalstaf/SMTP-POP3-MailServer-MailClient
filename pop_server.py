@@ -113,23 +113,34 @@ def handle_client(logger: BoundLogger, config: ConfigWrapper, conn: socket.socke
 
 def command_handler(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     global thread_local
-    if command == "USER " and thread_local.server_state == "AUTHORIZATION":
-        thread_local.user_authenticated = pop3_USER(logger, config, command,  message, connection)
+    try:
+        if command == "USER " and thread_local.server_state == "AUTHORIZATION":
+            thread_local.user_authenticated = pop3_USER(logger, config, command,  message, connection)
 
-    elif command == "PASS " and thread_local.server_state == "AUTHORIZATION" and thread_local.user_authenticated:
-        pop3_PASS(logger, config, command, message, connection)
-    elif command == "QUIT":
-        pop3_QUIT(logger, config, command, message, connection)
-    elif command == "STAT":
-        pop3_STAT(logger, config, command, message, connection)
-    elif command == "LIST":
-        pop3_LIST(logger, config, command, message, connection)
-    elif command == "RETR":
-        pop3_RETR(logger, config, command, message, connection)
-    elif command == "DELE":
-        pop3_DELE(logger, config, command, message, connection)
-    else:
-        logger.info(f"Invalid command: {command}")
+        elif command == "PASS " and thread_local.server_state == "AUTHORIZATION" and thread_local.user_authenticated:
+            pop3_PASS(logger, config, command, message, connection)
+        elif command == "QUIT":
+            pop3_QUIT(logger, config, command, message, connection)
+        elif command == "STAT":
+            pop3_STAT(logger, config, command, message, connection)
+        elif command == "LIST":
+            pop3_LIST(logger, config, command, message, connection)
+        elif command == "RETR":
+            pop3_RETR(logger, config, command, message, connection)
+        elif command == "DELE":
+            pop3_DELE(logger, config, command, message, connection)
+        else:
+            logger.info(f"Invalid command: {command}")
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
 
 
 def pop3_USER(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> bool:
@@ -195,89 +206,192 @@ def pop3_PASS(logger: BoundLogger, config: ConfigWrapper, command: str, message:
 
 def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     global thread_local
-    if thread_local.server_state == "AUTHORIZATION":
-        logger.info(command + message)
-        logger.info("Client terminated the connection in the AUTHORIZATION STATE")
-        logger.info("Server is now terminating the connection")
-        send_message = ("+OK", " Thanks for using POP3 server")
-        pickle_data = pickle.dumps(send_message)
-        logger.info(send_message[0] + send_message[1])
-        connection.sendall(pickle_data)
-        
-    
-    elif thread_local.server_state == "TRANSACTION":
-        logger.info(command + message)
-        thread_local.server_state = str("UPDATE")
-        logger.info(f"Server is now in the {thread_local.server_state} STATE")
-        logger.info("Server will now clean up all resources and close the connection")
-
-        mailbox_semaphore.acquire()
-        try:
-            mailbox_file = os.path.join("USERS", thread_local.session_username, "my_mailbox.txt")
-            mailbox_file.strip()
-            with open(mailbox_file, 'r') as f:
-                mailbox = f.readlines()
-            
-            formatted_mailbox = get_messages_list(mailbox)
-            deleted_messages = []
-            updated_mailbox = []
-            for index, message in enumerate(formatted_mailbox):
-                if message.startswith('X'):
-                    deleted_messages.append(index)
-                else:
-                    updated_mailbox.append(message)
-            for index in reversed(deleted_messages):
-                del updated_mailbox[index]
-            
-            with open(mailbox_file, 'w') as f:
-                f.writelines(updated_mailbox)
+    try:
+        if thread_local.server_state == "AUTHORIZATION":
+            logger.info(command + message)
+            logger.info("Client terminated the connection in the AUTHORIZATION STATE")
+            logger.info("Server is now terminating the connection")
             send_message = ("+OK", " Thanks for using POP3 server")
             pickle_data = pickle.dumps(send_message)
             logger.info(send_message[0] + send_message[1])
             connection.sendall(pickle_data)
             
-        except Exception as e:
-            logger.exception(f"An error occurred while closing the connection: {e}")
-            send_message = ("-ERR", " [AUTH] Authentication failed due to server error")
-            pickle_data = pickle.dumps(send_message)
-            logger.info(send_message[0] + send_message[1])
-            connection.sendall(pickle_data)
-        finally:
-            mailbox_semaphore.release() 
-            
-            
-    
+        
+        elif thread_local.server_state == "TRANSACTION":
+            logger.info(command + message)
+            thread_local.server_state = str("UPDATE")
+            logger.info(f"Server is now in the {thread_local.server_state} STATE")
+            logger.info("Server will now clean up all resources and close the connection")
+
+            mailbox_semaphore.acquire()
+            try:
+                mailbox_file = os.path.join("USERS", thread_local.session_username, "my_mailbox.txt")
+                mailbox_file.strip()
+                with open(mailbox_file, 'r') as f:
+                    mailbox = f.readlines()
+                
+                formatted_mailbox = get_messages_list(mailbox)
+                deleted_messages = []
+                updated_mailbox = []
+                for index, message in enumerate(formatted_mailbox):
+                    if message.startswith('X'):
+                        deleted_messages.append(index)
+                    else:
+                        updated_mailbox.append(message)
+                for index in reversed(deleted_messages):
+                    del updated_mailbox[index]
+                
+                with open(mailbox_file, 'w') as f:
+                    f.writelines(updated_mailbox)
+                send_message = ("+OK", " Thanks for using POP3 server")
+                pickle_data = pickle.dumps(send_message)
+                logger.info(send_message[0] + send_message[1])
+                connection.sendall(pickle_data)
+                
+            except Exception as e:
+                logger.exception(f"An error occurred while closing the connection: {e}")
+                send_message = ("-ERR", " [AUTH] Authentication failed due to server error")
+                pickle_data = pickle.dumps(send_message)
+                logger.info(send_message[0] + send_message[1])
+                connection.sendall(pickle_data)
+            finally:
+                mailbox_semaphore.release()
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+                
+                
+        
 
 def pop3_STAT(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     global thread_local
-    logger.info(command + message)
-    mailbox_file = os.path.join("USERS", thread_local.session_username, "my_mailbox.txt")
-    mailbox_file.strip()
-    with open(mailbox_file, 'r') as f:
-        mailbox = f.readlines()
-    formatted_mailbox = get_messages_list(mailbox)
-    number_of_messages = len(formatted_mailbox)
-    total_size_mailbox = 0
-    for message in formatted_mailbox:
-        bytes = message.encode('utf-8')
-        total_size_mailbox += len(bytes)
-    if number_of_messages >= 0 and total_size_mailbox >= 0:
-        send_message = ("+OK", " " + str(number_of_messages) + " " + str(total_size_mailbox)+ "\r\n")
+    try:
+        logger.info(command + message)
+        mailbox_file = os.path.join("USERS", thread_local.session_username, "my_mailbox.txt")
+        mailbox_file.strip()
+        with open(mailbox_file, 'r') as f:
+            mailbox = f.readlines()
+        formatted_mailbox = get_messages_list(mailbox)
+        number_of_messages = len(formatted_mailbox)
+        total_size_mailbox = 0
+        for message in formatted_mailbox:
+            bytes = message.encode('utf-8')
+            total_size_mailbox += len(bytes)
+        if number_of_messages >= 0 and total_size_mailbox >= 0:
+            send_message = ("+OK", " " + str(number_of_messages) + " " + str(total_size_mailbox)+ "\r\n")
+            pickle_data = pickle.dumps(send_message)
+            logger.info(send_message[0] + send_message[1])
+            connection.sendall(pickle_data)
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
         pickle_data = pickle.dumps(send_message)
-        logger.info(send_message[0] + send_message[1])
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
         connection.sendall(pickle_data)
 
-def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
+def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message: int, connection: socket) -> None:
     global thread_local
-    pass
+    try:
+        logger.info(command + message)
+        mailbox_file = os.path.join("USERS", thread_local.session_username, "my_mailbox.txt")
+        mailbox_file.strip()
+        with open(mailbox_file, 'r') as f:
+            mailbox = f.readlines()
+
+        non_deleted_mailbox = get_not_deleted_messages(mailbox)
+        number_of_messages = len(non_deleted_mailbox)
+        total_size_mailbox = 0
+        message_size_list = []
+        for scan_listing in non_deleted_mailbox:
+            bytes = scan_listing.encode('utf-8')
+            size = len(bytes)
+            message_size_list.append(size)
+            total_size_mailbox += size
+
+        if message == '' or message == None or message == " ":
+            send_message = ("+OK", f" {number_of_messages} messages  ({total_size_mailbox} octets)" + "\r\n")
+            pickle_data = pickle.dumps(send_message)
+            connection.sendall(pickle_data)
+            for scan_listing in range(1, number_of_messages):
+                send_message = ("+OK", f" {scan_listing} {message_size_list[scan_listing-1]}" + "\r\n")
+                pickle_data = pickle.dumps(send_message)
+                connection.sendall(pickle_data)
+
+            send_message = (".", " " )
+            pickle_data = pickle.dumps(send_message)
+            connection.sendall(pickle_data)
+        else:
+            message_number = int(message)
+            number_of_messages = len(non_deleted_mailbox)
+            if message_number > number_of_messages:
+                send_message = ("-ERR", f" No such message, only {number_of_messages} in maildrop" + "\r\n")
+                pickle_data = pickle.dumps(send_message)
+                connection.sendall(pickle_data)
+            else:
+                send_message = ("+OK", f"{message_number}   {message_size_list[message_number - 1]}" + "\r\n")
+                pickle_data = pickle.dumps(send_message)
+                connection.sendall(pickle_data)
+
+                send_message = (".", " " )
+                pickle_data = pickle.dumps(send_message)
+                connection.sendall(pickle_data)
+                
+
+
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+
+
+    
 
 def pop3_RETR(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     global thread_local
-    pass
+    try:
+        pass
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
 
 def pop3_DELE(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     global thread_local
-    pass
+    try:
+        pass
+    except KeyboardInterrupt:
+        logger.exception("Program interrupted by user")
+        send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+    except Exception as e:
+        logger.exception(f"An error occurred: {e}")
+        send_message = ("554", f"The server was terminated because an error occurred. Error: {e} "+ "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
 
 
 def get_messages_list(mailbox: list[str]) -> list[str]:
@@ -294,6 +408,22 @@ def get_messages_list(mailbox: list[str]) -> list[str]:
         messages.append(current_message.strip())
     
     return messages
+
+#insert the non-formatted mailbox
+def get_not_deleted_messages(mailbox: list[str]) -> list[str]:
+    formatted_mailbox = get_messages_list(mailbox)
+    deleted_messages = []
+    updated_mailbox = []
+    for index, message in enumerate(formatted_mailbox):
+        if message.startswith('X'):
+            deleted_messages.append(index)
+        else:
+            updated_mailbox.append(message)
+    for index in reversed(deleted_messages):
+        del updated_mailbox[index]
+
+    return updated_mailbox
+    
 
 
 if __name__ == "__main__":
