@@ -326,6 +326,7 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             for scan_listing in range(1, number_of_messages):
                 send_message = ("+OK", f" {scan_listing} {message_size_list[scan_listing-1]}" + "\r\n")
                 pickle_data = pickle.dumps(send_message)
+                logger.debug(f"Sending message: {send_message}")
                 connection.sendall(pickle_data)
 
             send_message = (".", " " )
@@ -366,7 +367,29 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message:
 def pop3_RETR(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     global thread_local
     try:
-        pass
+        logger.info(command + message)
+        requested_message_number = int(message.strip())
+        mailbox_file = os.path.join("USERS", thread_local.session_username, "my_mailbox.txt")
+        mailbox_file.strip()
+        with open(mailbox_file, 'r') as f:
+            mailbox = f.readlines()
+
+        non_deleted_mailbox = get_not_deleted_messages(mailbox)
+        requested_message = non_deleted_mailbox[requested_message_number-1]
+        requested_message_size = len(requested_message.encode('utf-8'))
+
+        
+        send_message = ("+OK", f" {requested_message_size} octets" + "\r\n")
+        logger.debug(f"{send_message[0]}   {send_message[1]}")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+
+        
+        send_message = (requested_message_number, f" {requested_message}" + "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        logger.debug(f"{send_message[0]}   {send_message[1]}")
+        connection.sendall(pickle_data)
+
     except KeyboardInterrupt:
         logger.exception("Program interrupted by user")
         send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")
@@ -378,10 +401,50 @@ def pop3_RETR(logger: BoundLogger, config: ConfigWrapper, command: str, message:
         pickle_data = pickle.dumps(send_message)
         connection.sendall(pickle_data)
 
+
 def pop3_DELE(logger: BoundLogger, config: ConfigWrapper, command: str, message: str, connection: socket) -> None:
     global thread_local
     try:
-        pass
+        logger.info(command + message)
+        requested_message_number = int(message.strip())
+        mailbox_file = os.path.join("USERS", thread_local.session_username, "my_mailbox.txt")
+        mailbox_file.strip()
+        updated_mailbox = []
+        with open(mailbox_file, 'r') as f:
+            message_lines = []
+            for line in f:
+                if line.startswith('From '):
+                    # If we have a message in progress, add it to the updated mailbox
+                    if message_lines:
+                        updated_mailbox.extend(message_lines)
+                        message_lines = []
+                    # Add the first line of the new message to the updated mailbox
+                    if len(updated_mailbox) + 1 == requested_message_number:
+                        updated_mailbox.append('X' + line)
+                        logger.info(f"Marked message {requested_message_number} for deletion")
+                    else:
+                        updated_mailbox.append(line)
+                elif line.startswith('.') and len(line) == 2:
+                    message_lines.append(line)
+                    if len(updated_mailbox) + len(message_lines) == requested_message_number:
+                        updated_mailbox.extend(['X' + line for line in message_lines])
+                        logger.info(f"Marked message {requested_message_number} for deletion")
+                    else:
+                        updated_mailbox.extend(message_lines)
+                    message_lines = []
+                else:
+                    message_lines.append(line)
+            # Add any remaining message lines to the updated mailbox
+            if message_lines:
+                updated_mailbox.extend(message_lines)
+        with open(mailbox_file, 'w') as f:
+            f.writelines(updated_mailbox)
+        send_message = ("+OK", f" message {requested_message_number} deleted" + "\r\n")
+        pickle_data = pickle.dumps(send_message)
+        connection.sendall(pickle_data)
+        
+
+
     except KeyboardInterrupt:
         logger.exception("Program interrupted by user")
         send_message = ("554", "The server was interrupted by the server owner"+ "\r\n")

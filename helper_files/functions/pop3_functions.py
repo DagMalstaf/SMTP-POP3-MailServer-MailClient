@@ -127,9 +127,47 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
         
     
 
-def pop3_RETR() -> None:
-    pass
+def pop3_RETR(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
+    logger.info("Please provide the message number you want to retrieve.\n")
+    message_number = retrieve_command_promt_input("Message number: ", logger)
+    send_message = ("RETR", message_number)
+    pickle_data = pickle.dumps(send_message)
+    pop3_socket.sendall(pickle_data)
+    response_message = pop3_socket.recv(config.get_max_size_package_tcp())
+    tuple_data = pickle.loads(response_message)
+    response_code = tuple_data[0]
+    if response_code == "+OK":
+        logger.info(tuple_data[1])
+        response_message_for_retr = pop3_socket.recv(config.get_max_size_package_tcp())
+        tuple_data = pickle.loads(response_message_for_retr)
+        response_code = tuple_data[0]
+        message = tuple_data[1]
+        logger.debug(f"this is the code: {response_code}, and this is the message: {message}")
+        if int(response_code) == int(message_number):
+            logger.info(message)
+        else:
+            logger.error(f"Recieved the message number: {response_code}, but expected {message_number}")
 
-def pop3_DELE() -> None:
-    pass
+    else:
+        logger.error(f"Recieved response code: {response_code} from POP3 server")
+        logger.error(f"Recieved message: {tuple_data[1]} from POP3 server")
+
+
+def pop3_DELE(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
+    logger.info("Please provide the message number you want to delete.\n")
+    message_number = retrieve_command_promt_input("Message number: ", logger)
+    send_message = ("DELE", message_number)
+    pickle_data = pickle.dumps(send_message)
+    pop3_socket.sendall(pickle_data)
+    response_message = pop3_socket.recv(config.get_max_size_package_tcp())
+    tuple_data = pickle.loads(response_message)
+    response_code = tuple_data[0]
+    if response_code == "+OK":
+        logger.info(tuple_data[1])
+    
+    else:
+        logger.error(f"Recieved response code: {response_code} from POP3 server")
+        logger.error(f"Recieved message: {tuple_data[1]} from POP3 server")
+
+
 
