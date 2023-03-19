@@ -119,7 +119,7 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
             message = tuple_data[1]
             if response_code == ".":
                 recieving = False
-            logger.info(message)
+            logger.info(response_code + message)
     else:
         logger.error(f"Recieved response code: {response_code} from POP3 server")
         logger.error(f"Recieved message: {tuple_data[1]} from POP3 server")
