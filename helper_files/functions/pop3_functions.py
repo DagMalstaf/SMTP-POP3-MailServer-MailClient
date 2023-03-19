@@ -112,17 +112,16 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
         logger.error(f"Recieved response code: {response_code} from POP3 server")
         logger.error(f"Recieved message: {tuple_data[1]} from POP3 server")
     else:
-        recieving = True
         logger.info(tuple_data[1])
-        while recieving:
+        while response_code != ".":
             response_message_for_list = pop3_socket.recv(config.get_max_size_package_tcp())
             tuple_data = pickle.loads(response_message_for_list)
             response_code = tuple_data[0]
             message = tuple_data[1]
             logger.info(message)
-            if response_code == ".":
-                recieving = False
-                return
+            logger.debug(f"Recieved response code: {response_code} from POP3 server")
+            logger.debug(f"Recieved message: {tuple_data[1]} from POP3 server")
+            
             
         
     
@@ -142,7 +141,6 @@ def pop3_RETR(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
         tuple_data = pickle.loads(response_message_for_retr)
         response_code = tuple_data[0]
         message = tuple_data[1]
-        logger.debug(f"this is the code: {response_code}, and this is the message: {message}")
         if int(response_code) == int(message_number):
             logger.info(message)
         else:

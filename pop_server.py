@@ -320,13 +320,12 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message:
             send_message = ("+OK", f" {number_of_messages} messages  ({total_size_mailbox} octets)" + "\r\n")
             pickle_data = pickle.dumps(send_message)
             connection.sendall(pickle_data)
-            for scan_listing in range(1, number_of_messages):
+            for scan_listing in range(1, number_of_messages+1):
                 send_message = ("+OK", f" {scan_listing} {message_size_list[scan_listing-1]}" + "\r\n")
                 pickle_data = pickle.dumps(send_message)
-                logger.debug(f"Sending message: {send_message}")
                 connection.sendall(pickle_data)
 
-            send_message = (".", " " )
+            send_message = (".", str(" ") )
             pickle_data = pickle.dumps(send_message)
             connection.sendall(pickle_data)
         else:
@@ -341,7 +340,7 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, command: str, message:
                 pickle_data = pickle.dumps(send_message)
                 connection.sendall(pickle_data)
 
-                send_message = (".", " " )
+                send_message = (".", str(" ") )
                 pickle_data = pickle.dumps(send_message)
                 connection.sendall(pickle_data)
                 
