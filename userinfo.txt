@@ -1,2 +1,2 @@
-dag.malstaf@student.kuleuven.be ComputerNetworks1
-tristan.toye@student.kuleuven.be ComputerNetworks2
+dag.malstaf@student.kuleuven.be 5739ec1cb3d3a122eab2f95a3ddc120ece76187b4471483f326ce5a0f48ea6e6
+tristan.toye@student.kuleuven.be 4449c31818608dfa27cadbe16720d4e408bf5b7d651a54cffe150455f3bda2ec

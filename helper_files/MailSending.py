@@ -1,5 +1,4 @@
 import socket
-from typing import List
 from typing import TYPE_CHECKING
 from structlog import BoundLogger
 
@@ -16,7 +15,6 @@ class MailSending(Action):
 
     def __init__(self, logger: BoundLogger, config: "ConfigWrapper",ip_address,SMTP_port, POP3_port, username):
         super().__init__(logger, config, ip_address, SMTP_port, POP3_port, username)
-        pass
 
 
     """
@@ -47,19 +45,18 @@ class MailSending(Action):
             message = MessageWrapper(self._logger,self._config, input_message)
             if message.verify_format():
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as smtp_socket:
-                    try:
-                        smtp_socket.connect((self._ip_address, self._SMTP_port))
-                        self._logger.info(f"Connected to SMTP server at port {self._SMTP_port}")
-                        smtp_helo(self._logger, self._config, smtp_socket, self._config.get_host)
-                        smtp_mail_from(self._logger, self._config, smtp_socket, message.get_from(), self._config.get_host)
-                        smtp_rcpt_to(self._logger, self._config, smtp_socket, message.get_to(), self._config.get_host)
-                        smtp_data(self._logger, self._config, smtp_socket, message, self._config.get_host)
-                        smtp_quit(self._logger, self._config, smtp_socket, self._config.get_host)
-                        self._logger.info("Mail sent successfully")
 
-                    except Exception as e:
-                        self._logger.error(f"Error: {e}")
-                        raise e
+
+                    smtp_socket.connect((self._ip_address, self._SMTP_port))
+                    self._logger.info(f"Connected to SMTP server at port {self._SMTP_port}")
+                    smtp_helo(self._logger, self._config, smtp_socket, self._config.get_host())
+                    smtp_mail_from(self._logger, self._config, smtp_socket, message.get_from(), self._config.get_host())
+                    smtp_rcpt_to(self._logger, self._config, smtp_socket, message.get_to(), self._config.get_host())
+                    smtp_data(self._logger, self._config, smtp_socket, message, self._config.get_host())
+                    smtp_quit(self._logger, self._config, smtp_socket, self._config.get_host())
+                    self._logger.info("Mail sent successfully")
+
+
                 correct_format = True
             else:
                 self._logger.error(f"This is an incorect format")
