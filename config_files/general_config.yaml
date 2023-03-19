@@ -23,5 +23,5 @@ end_line_character : "\n"
 mail_separator_sign: "@"
 mail_domain_separator: "."
 host : "127.0.0.1"
-max_size_package_tcp : 100000
+max_size_package_tcp : 65535
 max_thread_load : 100

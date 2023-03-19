@@ -27,6 +27,8 @@ class MailManagement(Action):
             if pop3_authentication(self._logger, self._config, self._username, pop3_socket):
                 self._logger.info("Authentication successful")
                 while True:
+    
+
                     action_string = input(f"Provide action to perform [{self._config.get_mail_management_actions_as_string()}]: ")
                     if action_string == "Quit":
                         pop3_QUIT(self._logger, self._config, pop3_socket)
@@ -40,6 +42,7 @@ class MailManagement(Action):
                         pop3_DELE()
                     else:
                         self._logger.error(f"Invalid action: {action_string}")
+
             else:
                 self._logger.error("Authentication failed")
                 raise RestartMailServerError

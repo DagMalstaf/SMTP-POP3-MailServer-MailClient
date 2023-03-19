@@ -20,11 +20,9 @@ class MessageWrapper():
     
     def __get_from_index(self) -> int:
         return self._message.find(self._config.get_from_config()) + len(self._config.get_from_config())
-        return self._message.find(to_str) + len(to_str)
     
     def __get_to_index(self) -> int:
         return self._message.find(self._config.get_to_config()) + len(self._config.get_to_config())
-        return self._message.find(from_str, self.__getFromIndex()) + len(from_str)
 
     def __get_subject_index(self) -> int:
         return self._message.find(self._config.get_subject_config()) + len(self._config.get_subject_config())

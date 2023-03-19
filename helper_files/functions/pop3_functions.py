@@ -6,6 +6,7 @@ from custom_exceptions.RestartMailServerError import RestartMailServerError
 from helper_files.functions.general_helper_functions import retrieve_command_promt_input
 from helper_files.ConfigWrapper import ConfigWrapper
 
+
 def pop3_authentication(logger: BoundLogger, config: ConfigWrapper, username: str, connection: socket) -> bool:
     try:
         while True:
@@ -33,6 +34,7 @@ def pop3_authentication(logger: BoundLogger, config: ConfigWrapper, username: st
 
 
 def __pop3_USER(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket, username: str) -> bool:
+
     send_message = ("USER ", username)
     pickle_data = pickle.dumps(send_message)
     pop3_socket.sendall(pickle_data)
@@ -73,7 +75,7 @@ def pop3_QUIT(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
     if response_code == "+OK":
         logger.info(response_code + tuple_data[1])
         pop3_socket.close()
-        raise RestartMailServerError
+        raise RestartMailServerError()
     else:
         logger.error(f"Recieved response code: {response_code} from POP3 server")
         raise RestartMailServerError
@@ -119,10 +121,51 @@ def pop3_LIST(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -
             message = tuple_data[1]
             logger.info(message)
 
+            logger.debug(f"Recieved response code: {response_code} from POP3 server")
+            logger.debug(f"Recieved message: {tuple_data[1]} from POP3 server")
+            
 
-def pop3_RETR() -> None:
-    pass
+def pop3_RETR(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
+    logger.info("Please provide the message number you want to retrieve.\n")
+    message_number = retrieve_command_promt_input("Message number: ", logger)
+    send_message = ("RETR", message_number)
+    pickle_data = pickle.dumps(send_message)
+    pop3_socket.sendall(pickle_data)
+    response_message = pop3_socket.recv(config.get_max_size_package_tcp())
+    tuple_data = pickle.loads(response_message)
+    response_code = tuple_data[0]
+    if response_code == "+OK":
+        logger.info(tuple_data[1])
+        response_message_for_retr = pop3_socket.recv(config.get_max_size_package_tcp())
+        tuple_data = pickle.loads(response_message_for_retr)
+        response_code = tuple_data[0]
+        message = tuple_data[1]
+        if int(response_code) == int(message_number):
+            logger.info(message)
+        else:
+            logger.error(f"Recieved the message number: {response_code}, but expected {message_number}")
 
-def pop3_DELE() -> None:
-    pass
+    else:
+        logger.error(f"Recieved response code: {response_code} from POP3 server")
+        logger.error(f"Recieved message: {tuple_data[1]} from POP3 server")
+
+
+def pop3_DELE(logger: BoundLogger, config: ConfigWrapper, pop3_socket: socket) -> None:
+    logger.info("Please provide the message number you want to delete.\n")
+    message_number = retrieve_command_promt_input("Message number: ", logger)
+    send_message = ("DELE", message_number)
+    pickle_data = pickle.dumps(send_message)
+    pop3_socket.sendall(pickle_data)
+    response_message = pop3_socket.recv(config.get_max_size_package_tcp())
+    tuple_data = pickle.loads(response_message)
+    response_code = tuple_data[0]
+    if response_code == "+OK":
+        logger.info(tuple_data[1])
+    
+    else:
+        logger.error(f"Recieved response code: {response_code} from POP3 server")
+        logger.error(f"Recieved message: {tuple_data[1]} from POP3 server")
+
+
+
 

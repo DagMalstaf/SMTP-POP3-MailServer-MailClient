@@ -8,7 +8,6 @@ from helper_files.MessageWrapper import MessageWrapper
 from custom_exceptions.RestartMailServerError import RestartMailServerError
 
 
-
 def smtp_helo(logger : BoundLogger, config: ConfigWrapper, smtp_socket: socket, host_domain_name: str) -> None:
     logger.info(f"Sending HELO command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
     send_message = ("HELO", " " + f"{host_domain_name}\r\n")
@@ -90,6 +89,7 @@ def smtp_quit(logger: BoundLogger, config: ConfigWrapper, smtp_socket: socket, h
     command = tuple_data[0]
     if command == "221":
         logger.info("Closed the connection to the SMTP server")
+        raise RestartMailServerError
     else:
        logger.error(f"There was an error sending the QUIT command to {smtp_socket.getpeername()[0]} on port {smtp_socket.getpeername()[1]}")
        logger.error(f"Error: {tuple_data[1]}")

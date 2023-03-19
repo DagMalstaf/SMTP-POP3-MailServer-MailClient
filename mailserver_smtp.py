@@ -385,7 +385,7 @@ def write_to_mailbox(logger: BoundLogger, config: ConfigWrapper, message: Messag
         mailbox_file = os.path.join("USERS", mail_address, "my_mailbox.txt")
 
         with open(mailbox_file, 'a') as file:
-            file.write(str(message) + '\n')
+            file.write(str(message) + '\n\n')
             file.flush()
     finally:
         file_semaphore.release()
