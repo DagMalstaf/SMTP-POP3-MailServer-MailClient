@@ -25,7 +25,7 @@ class MailManagement(Action):
             self._logger.info(f"Connected to POP3 server at port {self._POP3_port}")
             server_confirmation = pop3_socket.recv(self._config.get_max_size_package_tcp()).decode()
             self._logger.info(f"Server confirmation: {server_confirmation}")
-            if pop3_authentication(self, pop3_socket):
+            if pop3_authentication(self._logger, self._config, self._username, pop3_socket):
                 self._logger.info("Authentication successful")
                 while True:
                     try:
@@ -42,11 +42,6 @@ class MailManagement(Action):
                             pop3_DELE()
                         else:
                             self._logger.error(f"Invalid action: {action_string}")
-                    
-                    except RestartMailServerError as e:
-                        self._logger.error(e)
-                        pass
-
                     except Exception as e:
                         self._logger.exception(f"An error occurred: {e}")
                         raise e        
